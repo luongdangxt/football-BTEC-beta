@@ -573,6 +573,130 @@ body {
   font-size: 13px;
 }
 
+.match-card--clickable {
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.match-card--clickable:hover {
+  border-color: rgba(91, 237, 159, 0.5);
+  box-shadow: 0 10px 26px rgba(91, 237, 159, 0.14);
+  transform: translateY(-2px);
+}
+
+.match-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.match-detail {
+  width: min(720px, 100%);
+  background: linear-gradient(150deg, rgba(17, 48, 32, 0.95), rgba(10, 27, 18, 0.98));
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 16px 18px 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.match-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.match-detail__head h3 {
+  margin: 6px 0 0;
+}
+
+.match-detail__body {
+  display: grid;
+  gap: 12px;
+}
+
+.match-detail__teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.scoreline--lg {
+  font-size: 30px;
+}
+
+.match-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.match-detail__events {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+}
+
+.event-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+}
+
+.event-time {
+  color: var(--accent);
+  font-weight: 800;
+  min-width: 42px;
+}
+
+.event-player {
+  color: var(--text);
+}
+
+.predict-list {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.predict-list__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.predict-list__body {
+  display: grid;
+  gap: 8px;
+}
+
+.predict-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+}
+
 .game-card--link {
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;

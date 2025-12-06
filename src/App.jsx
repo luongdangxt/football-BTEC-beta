@@ -36,6 +36,20 @@ const matchDays = [
         home: { name: "Chelsea", score: 6, badge: "CFC", color: "#1746af" },
         away: { name: "Norwich", score: 4, badge: "NOR", color: "#f2d039" },
         note: "End",
+        homeEvents: [
+          { time: "12'", player: "Hazard" },
+          { time: "45+1'", player: "Giroud" },
+          { time: "68'", player: "M. Mount" },
+        ],
+        awayEvents: [
+          { time: "22'", player: "Pukki" },
+          { time: "76'", player: "Buendía" },
+        ],
+        predictions: [
+          { name: "Nguyễn Văn A", pick: "3-1" },
+          { name: "Trần Minh B", pick: "2-0" },
+          { name: "Lê Q. C", pick: "1-1" },
+        ],
       },
       {
         id: "espanyol-barca",
@@ -44,6 +58,16 @@ const matchDays = [
         home: { name: "Espanyol", score: 1, badge: "ESP", color: "#1f8adb" },
         away: { name: "Barcelona", score: 0, badge: "BAR", color: "#d61f3b" },
         note: "End",
+        homeEvents: [
+          { time: "34'", player: "Joselu" },
+        ],
+        awayEvents: [
+          { time: "57'", player: "Lewandowski (miss pen)" },
+        ],
+        predictions: [
+          { name: "Phạm T. D", pick: "0-2" },
+          { name: "Hoàng Khang", pick: "1-3" },
+        ],
       },
     ],
   },
@@ -59,6 +83,12 @@ const matchDays = [
         home: { name: "Leganés", score: 0, badge: "LEG", color: "#1f9dd6" },
         away: { name: "Real Madrid", score: 0, badge: "RMA", color: "#ffffff" },
         note: "Đang diễn ra",
+        homeEvents: [],
+        awayEvents: [],
+        predictions: [
+          { name: "Ngô Đức H", pick: "0-2" },
+          { name: "L. Thảo", pick: "1-1" },
+        ],
       },
       {
         id: "brugge-dortmund",
@@ -67,6 +97,17 @@ const matchDays = [
         home: { name: "Club Brugge", score: 0, badge: "BRU", color: "#0d3b66" },
         away: { name: "Dortmund", score: 3, badge: "BVB", color: "#f1d300" },
         note: "Kết thúc",
+        homeEvents: [],
+        awayEvents: [
+          { time: "18'", player: "Bynoe-Gittens" },
+          { time: "60'", player: "Reus" },
+          { time: "86'", player: "Brandt" },
+        ],
+        predictions: [
+          { name: "Trịnh P. Nam", pick: "0-2" },
+          { name: "Vũ Minh H", pick: "1-2" },
+          { name: "L. My", pick: "0-1" },
+        ],
       },
     ],
   },
@@ -82,6 +123,12 @@ const matchDays = [
         home: { name: "Hertha BSC", badge: "BSC", color: "#0f69b4" },
         away: { name: "Dortmund", badge: "BVB", color: "#f1d300" },
         note: "Sắp bắt đầu",
+        homeEvents: [],
+        awayEvents: [],
+        predictions: [
+          { name: "Nguyễn Hồng P", pick: "0-2" },
+          { name: "Đ. Tuấn", pick: "1-3" },
+        ],
       },
       {
         id: "psg-girona",
@@ -91,6 +138,13 @@ const matchDays = [
         home: { name: "PSG", badge: "PSG", color: "#14274e" },
         away: { name: "Girona", badge: "GIR", color: "#e63946" },
         note: "Sắp diễn ra",
+        homeEvents: [],
+        awayEvents: [],
+        predictions: [
+          { name: "Phan L. T", pick: "2-1" },
+          { name: "Cao Ngọc M", pick: "3-0" },
+          { name: "T. Hải", pick: "1-0" },
+        ],
       },
     ],
   },
@@ -100,6 +154,7 @@ export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
   const [view, setView] = React.useState("bracket");
   const [selectedSection, setSelectedSection] = React.useState(null);
+  const [selectedMatch, setSelectedMatch] = React.useState(null);
 
   const handleSectionSelect = (sectionId) => {
     setSelectedSection(sectionId);
@@ -138,12 +193,13 @@ export default function App() {
           </section>
         ) : (
           <section className="section-block">
-            <ResultsFeed selectedLabel={selectedLabel} onBack={() => setView("bracket")} />
+            <ResultsFeed selectedLabel={selectedLabel} onBack={() => setView("bracket")} onSelectMatch={setSelectedMatch} />
           </section>
         )}
 
         <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
         {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
+        {selectedMatch && <MatchDetailModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
       </main>
     </div>
   );
@@ -331,7 +387,7 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ selectedLabel, onBack }) {
+function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
   return (
     <section className="results">
       <div className="results-header">
@@ -353,7 +409,7 @@ function ResultsFeed({ selectedLabel, onBack }) {
             <div className="match-day__heading">{day.label}</div>
             <div className="match-list">
               {day.matches.map((match) => (
-                <MatchCard key={match.id} match={match} />
+                <MatchCard key={match.id} match={match} onSelect={() => onSelectMatch?.(match)} />
               ))}
             </div>
           </article>
@@ -426,7 +482,7 @@ function Connector({ className, mode }) {
   );
 }
 
-function MatchCard({ match }) {
+function MatchCard({ match, onSelect }) {
   const statusLabel =
     match.status === "live"
       ? `LIVE ${match.minute || ""}`.trim()
@@ -437,7 +493,18 @@ function MatchCard({ match }) {
       : "Sắp diễn ra";
 
   return (
-    <article className={`match-card match-card--${match.status}`}>
+    <article
+      className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`}
+      onClick={onSelect}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : -1}
+      onKeyDown={(e) => {
+        if (onSelect && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
       <div className="match-meta">
         <span className="competition">{match.competition}</span>
         {match.kickoff && <span className="kickoff">{match.kickoff}</span>}
@@ -474,6 +541,87 @@ function TeamCell({ team, align = "left" }) {
 
 function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
+}
+
+function MatchDetailModal({ match, onClose }) {
+  const maskName = (name) => {
+    if (!name) return "";
+    if (name.length <= 2) return name[0] + "*";
+    const first = name.slice(0, 2);
+    const last = name.slice(-1);
+    return `${first}${"*".repeat(Math.max(1, name.length - 3))}${last}`;
+  };
+
+  const renderEvents = (events) =>
+    events && events.length > 0 ? (
+      events.map((ev, idx) => (
+        <div key={`${ev.time}-${idx}`} className="event-item">
+          <span className="event-time">{ev.time}</span>
+          <span className="event-player">{ev.player}</span>
+        </div>
+      ))
+    ) : (
+      <span className="muted">Chưa có bàn thắng</span>
+    );
+
+  return (
+    <div className="match-detail-backdrop" role="dialog" aria-modal="true">
+      <div className="match-detail">
+        <div className="match-detail__head">
+          <div>
+            <p className="eyebrow">{match.competition}</p>
+            <h3>
+              {match.home.name} vs {match.away.name}
+            </h3>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Đóng">
+            ×
+          </button>
+        </div>
+
+        <div className="match-detail__body">
+          <div className="match-detail__teams">
+            <TeamCell team={match.home} />
+            <div className="scoreline scoreline--lg">
+              <span className="score">{match.home.score ?? "-"}</span>
+              <span className="dash">-</span>
+              <span className="score">{match.away.score ?? "-"}</span>
+            </div>
+            <TeamCell team={match.away} align="right" />
+          </div>
+          <div className="match-detail__meta">
+            <StatusPill status={match.status} label={match.status === "live" ? `LIVE ${match.minute || ""}`.trim() : match.status === "ft" ? "Kết thúc" : match.kickoff ? `Bắt đầu ${match.kickoff}` : "Sắp diễn ra"} />
+            {match.note && <span className="status-note">{match.note}</span>}
+          </div>
+          <div className="match-detail__events">
+            <div>
+              <p className="eyebrow">Đội nhà</p>
+              {renderEvents(match.homeEvents || [])}
+            </div>
+            <div>
+              <p className="eyebrow">Đội khách</p>
+              {renderEvents(match.awayEvents || [])}
+            </div>
+          </div>
+          <div className="predict-list">
+            <div className="predict-list__head">
+              <p className="eyebrow">Người dự đoán</p>
+              <span className="muted">{(match.predictions || []).length} người</span>
+            </div>
+            <div className="predict-list__body">
+              {(match.predictions || []).map((p, idx) => (
+                <div key={`${p.name}-${idx}`} className="predict-item">
+                  <span>{maskName(p.name)}</span>
+                  {p.pick && <span className="muted">{p.pick}</span>}
+                </div>
+              ))}
+              {(match.predictions || []).length === 0 && <span className="muted">Chưa có dự đoán</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function BottomCta({ onClick }) {
