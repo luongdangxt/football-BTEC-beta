@@ -37,28 +37,34 @@ export default function App() {
         </header>
 
         <section className="board">
+          <div className="board-viewport">
+            <div className="round-anchor round-anchor--qf" aria-hidden />
+            <div className="round-anchor round-anchor--semi" aria-hidden />
+            <div className="round-anchor round-anchor--final" aria-hidden />
+            <div className="round-anchor round-anchor--champ" aria-hidden />
 
-          <div className="board-grid">
-            <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" />
-            <GameCard game={quarterGames[1]} variant="quarter" extraClass="pos-q2" />
-            <GameCard game={quarterGames[2]} variant="quarter" extraClass="pos-q3" />
-            <GameCard game={quarterGames[3]} variant="quarter" extraClass="pos-q4" />
+            <div className="board-grid">
+              <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" />
+              <GameCard game={quarterGames[1]} variant="quarter" extraClass="pos-q2" />
+              <GameCard game={quarterGames[2]} variant="quarter" extraClass="pos-q3" />
+              <GameCard game={quarterGames[3]} variant="quarter" extraClass="pos-q4" />
 
-            <GameCard game={semiGames[0]} variant="semi" extraClass="pos-s1" />
-            <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" />
+              <GameCard game={semiGames[0]} variant="semi" extraClass="pos-s1" />
+              <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" />
 
-            <GameCard game={finalGame} variant="final" extraClass="pos-f" />
-            <ChampionCard extraClass="pos-champion" />
+              <GameCard game={finalGame} variant="final" extraClass="pos-f" />
+              <ChampionCard extraClass="pos-champion" />
 
-            <Connector className="connector connector-q12" mode="q" />
-            <Connector className="connector connector-q34" mode="q" />
-            <Connector className="connector connector-semis" mode="semi" />
-            <Connector className="connector connector-final" mode="final" />
+              <Connector className="connector connector-q12" mode="q" />
+              <Connector className="connector connector-q34" mode="q" />
+              <Connector className="connector connector-semis" mode="semi" />
+              <Connector className="connector connector-final" mode="final" />
 
-            <div className="round-label round-label--qf">Round 1</div>
-            <div className="round-label round-label--semi">Round 2</div>
-            <div className="round-label round-label--final">Final</div>
-            <div className="round-label round-label--champ">Champion</div>
+              <div className="round-label round-label--qf">Round 1</div>
+              <div className="round-label round-label--semi">Round 2</div>
+              <div className="round-label round-label--final">Final</div>
+              <div className="round-label round-label--champ">Champion</div>
+            </div>
           </div>
         </section>
       </main>
