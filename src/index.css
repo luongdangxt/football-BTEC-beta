@@ -168,6 +168,32 @@ body {
   margin: 0 auto;
 }
 
+.round-label {
+  position: absolute;
+  top: 8px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.round-label--qf {
+  left: 6px;
+}
+
+.round-label--semi {
+  left: calc(260px + 80px + 6px);
+}
+
+.round-label--final {
+  left: calc(260px + 80px + 260px + 80px + 6px);
+}
+
+.round-label--champ {
+  left: calc(260px + 80px + 260px + 80px + 260px + 40px + 6px);
+}
+
 .game-card {
   position: relative;
   background: rgba(255, 255, 255, 0.03);

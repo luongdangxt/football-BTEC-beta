@@ -37,11 +37,6 @@ export default function App() {
         </header>
 
         <section className="board">
-          <div className="round-headings">
-            <span>Round 1</span>
-            <span>Round 2</span>
-            <span>Final</span>
-          </div>
 
           <div className="board-grid">
             <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" />
@@ -59,6 +54,11 @@ export default function App() {
             <Connector className="connector connector-q34" mode="q" />
             <Connector className="connector connector-semis" mode="semi" />
             <Connector className="connector connector-final" mode="final" />
+
+            <div className="round-label round-label--qf">Round 1</div>
+            <div className="round-label round-label--semi">Round 2</div>
+            <div className="round-label round-label--final">Final</div>
+            <div className="round-label round-label--champ">Champion</div>
           </div>
         </section>
       </main>
