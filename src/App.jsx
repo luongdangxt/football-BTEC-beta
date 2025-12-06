@@ -79,6 +79,8 @@ export default function App() {
 }
 
 function AuthModal({ open, onClose }) {
+  const [view, setView] = React.useState('login');
+
   React.useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') {
@@ -91,6 +93,12 @@ function AuthModal({ open, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
+  React.useEffect(() => {
+    if (open) {
+      setView('login');
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -99,30 +107,48 @@ function AuthModal({ open, onClose }) {
         <div className="auth-modal__head">
           <div>
             <p className="eyebrow">Football tournament</p>
-            <h2>Đăng nhập / Đăng ký</h2>
+            <h2>{view === 'login' ? 'Đăng nhập' : 'Đăng ký'}</h2>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Đóng">
             ×
           </button>
         </div>
-        <section className="auth">
-          <div className="auth-card">
-            <div className="auth-card__head">
-              <p className="eyebrow">Truy cap</p>
-              <h3>Đăng nhập</h3>
-              <p className="muted">Vào nhanh để lưu bracket, đồng bộ dự đoán trên mọi thiết bị.</p>
+        <section className="auth auth--single">
+          {view === 'login' ? (
+            <div className="auth-card">
+              <div className="auth-card__head">
+                <p className="eyebrow">Truy cap</p>
+                <h3>Đăng nhập</h3>
+                <p className="muted">Vào nhanh để lưu bracket, đồng bộ dự đoán trên mọi thiết bị.</p>
+              </div>
+              <AuthForm mode="login" />
+              <div className="auth-foot">
+                <span>
+                  Không có tài khoản?{' '}
+                  <button type="button" className="link-button" onClick={() => setView('register')}>
+                    Đăng ký
+                  </button>
+                </span>
+              </div>
             </div>
-            <AuthForm mode="login" />
-          </div>
-
-          <div className="auth-card auth-card--accent">
-            <div className="auth-card__head">
-              <p className="eyebrow">Tạo tài khoản</p>
-              <h3>Đăng ký</h3>
-              <p className="muted">Theo dõi tiến độ giải, nhận cập nhật và chia sẻ đường dẫn dự đoán.</p>
+          ) : (
+            <div className="auth-card auth-card--accent">
+              <div className="auth-card__head">
+                <p className="eyebrow">Tạo tài khoản</p>
+                <h3>Đăng ký</h3>
+                <p className="muted">Theo dõi tiến độ giải, nhận cập nhật và chia sẻ đường dẫn dự đoán.</p>
+              </div>
+              <AuthForm mode="register" />
+              <div className="auth-foot">
+                <span>
+                  Đã có tài khoản?{' '}
+                  <button type="button" className="link-button" onClick={() => setView('login')}>
+                    Đăng nhập
+                  </button>
+                </span>
+              </div>
             </div>
-            <AuthForm mode="register" />
-          </div>
+          )}
         </section>
       </div>
     </div>

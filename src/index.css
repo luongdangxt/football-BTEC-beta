@@ -129,6 +129,10 @@ body {
   margin: 8px 0 18px;
 }
 
+.auth--single {
+  grid-template-columns: 1fr;
+}
+
 .auth-card {
   background: linear-gradient(140deg, rgba(17, 48, 32, 0.88), rgba(10, 27, 18, 0.94));
   border: 1px solid var(--stroke);
