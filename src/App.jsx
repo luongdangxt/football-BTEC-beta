@@ -1,21 +1,112 @@
-import React from 'react';
+﻿import React from "react";
 
 const quarterGames = [
-  { id: 'g1', label: 'Bảng A', slots: ['Đội 1', 'Đội 2', 'Đội 3'] },
-  { id: 'g2', label: 'Bảng B', slots: ['Đội 4', 'Đội 5', 'Đội 6'] },
-  { id: 'g3', label: 'Bảng C', slots: ['Đội 7', 'Đội 8', 'Đội 9'] },
-  { id: 'g4', label: 'Bảng D', slots: ['Đội 10', 'Đội 11', 'Đội 12'] },
+  { id: "g1", label: "Bảng A", slots: ["Đội 1", "Đội 2", "Đội 3"] },
+  { id: "g2", label: "Bảng B", slots: ["Đội 4", "Đội 5", "Đội 6"] },
+  { id: "g3", label: "Bảng C", slots: ["Đội 7", "Đội 8", "Đội 9"] },
+  { id: "g4", label: "Bảng D", slots: ["Đội 10", "Đội 11", "Đội 12"] },
 ];
 
 const semiGames = [
-  { id: 'g5', label: 'Bán kết 1', slots: ['Nhất bảng A', 'Nhất bảng B'], connectorHeight: 94 },
-  { id: 'g6', label: 'Bán kết 2', slots: ['Nhất bảng C', 'Nhất bảng D'], connectorHeight: 94 },
+  { id: "g5", label: "Bán kết 1", slots: ["Nhất bảng A", "Nhất bảng B"], connectorHeight: 94 },
+  { id: "g6", label: "Bán kết 2", slots: ["Nhất bảng C", "Nhất bảng D"], connectorHeight: 94 },
 ];
 
-const finalGame = { id: 'g7', label: 'Chung kết', slots: ['Thắng bán kết 1', 'Thắng bán kết 2'], connectorHeight: 188 };
+const finalGame = { id: "g7", label: "Chung kết", slots: ["Thắng bán kết 1", "Thắng bán kết 2"], connectorHeight: 188 };
+
+const sectionMatches = {
+  g1: { label: "Bảng A" },
+  g2: { label: "Bảng B" },
+  g3: { label: "Bảng C" },
+  g4: { label: "Bảng D" },
+  g5: { label: "Bán kết 1" },
+  g6: { label: "Bán kết 2" },
+  g7: { label: "Chung kết" },
+};
+
+const matchDays = [
+  {
+    id: "yesterday",
+    label: "Hôm qua, 18 Jan 2018",
+    matches: [
+      {
+        id: "chelsea-norwich",
+        competition: "FA Cup",
+        status: "ft",
+        home: { name: "Chelsea", score: 6, badge: "CFC", color: "#1746af" },
+        away: { name: "Norwich", score: 4, badge: "NOR", color: "#f2d039" },
+        note: "End",
+      },
+      {
+        id: "espanyol-barca",
+        competition: "Copa del Rey",
+        status: "ft",
+        home: { name: "Espanyol", score: 1, badge: "ESP", color: "#1f8adb" },
+        away: { name: "Barcelona", score: 0, badge: "BAR", color: "#d61f3b" },
+        note: "End",
+      },
+    ],
+  },
+  {
+    id: "today",
+    label: "Hôm nay, 19 Jan 2018",
+    matches: [
+      {
+        id: "leganes-real",
+        competition: "Copa del Rey",
+        status: "live",
+        minute: "4'",
+        home: { name: "Leganés", score: 0, badge: "LEG", color: "#1f9dd6" },
+        away: { name: "Real Madrid", score: 0, badge: "RMA", color: "#ffffff" },
+        note: "Đang diễn ra",
+      },
+      {
+        id: "brugge-dortmund",
+        competition: "Champions League",
+        status: "ft",
+        home: { name: "Club Brugge", score: 0, badge: "BRU", color: "#0d3b66" },
+        away: { name: "Dortmund", score: 3, badge: "BVB", color: "#f1d300" },
+        note: "Kết thúc",
+      },
+    ],
+  },
+  {
+    id: "tomorrow",
+    label: "Ngày mai, 20 Jan 2018",
+    matches: [
+      {
+        id: "hertha-dortmund",
+        competition: "Bundesliga R19",
+        status: "upcoming",
+        kickoff: "03:30",
+        home: { name: "Hertha BSC", badge: "BSC", color: "#0f69b4" },
+        away: { name: "Dortmund", badge: "BVB", color: "#f1d300" },
+        note: "Sắp bắt đầu",
+      },
+      {
+        id: "psg-girona",
+        competition: "Champions League",
+        status: "upcoming",
+        kickoff: "03:00",
+        home: { name: "PSG", badge: "PSG", color: "#14274e" },
+        away: { name: "Girona", badge: "GIR", color: "#e63946" },
+        note: "Sắp diễn ra",
+      },
+    ],
+  },
+];
 
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
+  const [view, setView] = React.useState("bracket");
+  const [selectedSection, setSelectedSection] = React.useState(null);
+
+  const handleSectionSelect = (sectionId) => {
+    setSelectedSection(sectionId);
+    setView("results");
+  };
+
+  const selectedLabel = selectedSection ? sectionMatches[selectedSection]?.label : null;
 
   return (
     <div className="app">
@@ -24,8 +115,8 @@ export default function App() {
         <header className="hero">
           <div className="hero-text">
             <p className="eyebrow">Football tournament</p>
-            <h1>Cay bracket du doan</h1>
-            <p className="lede">Bo cuc ngang, 4 tran dau vao, 2 tran ban ket, 1 tran chung ket kem cup va duong noi giong hinh mau.</p>
+            <h1>Cây giải đấu & trang kết quả</h1>
+            <p className="lede">Cây chỉ để xem bố cục giải. Bấm vào bảng/bán kết/chung kết để mở trang kết quả đang diễn ra.</p>
           </div>
           <div className="badge">
             <div className="badge-ball" />
@@ -41,61 +132,41 @@ export default function App() {
           </div>
         </header>
 
-        <section className="board">
-          <div className="board-viewport">
-            <div className="round-anchor round-anchor--qf" aria-hidden />
-            <div className="round-anchor round-anchor--semi" aria-hidden />
-            <div className="round-anchor round-anchor--final" aria-hidden />
-            <div className="round-anchor round-anchor--champ" aria-hidden />
+        {view === "bracket" ? (
+          <section className="section-block section-block--bare">
+            <BracketBoard onSectionSelect={handleSectionSelect} />
+          </section>
+        ) : (
+          <section className="section-block">
+            <ResultsFeed selectedLabel={selectedLabel} onBack={() => setView("bracket")} />
+          </section>
+        )}
 
-            <div className="board-grid">
-              <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" />
-              <GameCard game={quarterGames[1]} variant="quarter" extraClass="pos-q2" />
-              <GameCard game={quarterGames[2]} variant="quarter" extraClass="pos-q3" />
-              <GameCard game={quarterGames[3]} variant="quarter" extraClass="pos-q4" />
-
-              <GameCard game={semiGames[0]} variant="semi" extraClass="pos-s1" />
-              <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" />
-
-              <GameCard game={finalGame} variant="final" extraClass="pos-f" />
-              <ChampionCard extraClass="pos-champion" />
-
-              <Connector className="connector connector-q12" mode="q" />
-              <Connector className="connector connector-q34" mode="q" />
-              <Connector className="connector connector-semis" mode="semi" />
-              <Connector className="connector connector-final" mode="final" />
-
-              <div className="round-label round-label--qf">Vòng bảng</div>
-              <div className="round-label round-label--semi">Bán kết</div>
-              <div className="round-label round-label--final">Chung kết</div>
-              <div className="round-label round-label--champ">Vô địch</div>
-            </div>
-          </div>
-        </section>
         <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+        {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
       </main>
     </div>
   );
 }
 
 function AuthModal({ open, onClose }) {
-  const [view, setView] = React.useState('login');
+  const [view, setView] = React.useState("login");
 
   React.useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose?.();
       }
     };
     if (open) {
-      window.addEventListener('keydown', handler);
+      window.addEventListener("keydown", handler);
     }
-    return () => window.removeEventListener('keydown', handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
   React.useEffect(() => {
     if (open) {
-      setView('login');
+      setView("login");
     }
   }, [open]);
 
@@ -107,25 +178,25 @@ function AuthModal({ open, onClose }) {
         <div className="auth-modal__head">
           <div>
             <p className="eyebrow">Football tournament</p>
-            <h2>{view === 'login' ? 'Đăng nhập' : 'Đăng ký'}</h2>
+            <h2>{view === "login" ? "Đăng nhập" : "Đăng ký"}</h2>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Đóng">
             ×
           </button>
         </div>
         <section className="auth auth--single">
-          {view === 'login' ? (
+          {view === "login" ? (
             <div className="auth-card">
               <div className="auth-card__head">
-                <p className="eyebrow">Truy cap</p>
+                <p className="eyebrow">Truy cập</p>
                 <h3>Đăng nhập</h3>
-                <p className="muted">Vào nhanh để lưu bracket, đồng bộ dự đoán trên mọi thiết bị.</p>
+                <p className="muted">Lưu bracket và đồng bộ dự đoán trên mọi thiết bị.</p>
               </div>
               <AuthForm mode="login" />
               <div className="auth-foot">
                 <span>
-                  Không có tài khoản?{' '}
-                  <button type="button" className="link-button" onClick={() => setView('register')}>
+                  Chưa có tài khoản? {" "}
+                  <button type="button" className="link-button" onClick={() => setView("register")}>
                     Đăng ký
                   </button>
                 </span>
@@ -136,13 +207,13 @@ function AuthModal({ open, onClose }) {
               <div className="auth-card__head">
                 <p className="eyebrow">Tạo tài khoản</p>
                 <h3>Đăng ký</h3>
-                <p className="muted">Theo dõi tiến độ giải, nhận cập nhật và chia sẻ đường dẫn dự đoán.</p>
+                <p className="muted">Theo dõi giải đấu, nhận nhắc lịch và chia sẻ đường dẫn dự đoán.</p>
               </div>
               <AuthForm mode="register" />
               <div className="auth-foot">
                 <span>
-                  Đã có tài khoản?{' '}
-                  <button type="button" className="link-button" onClick={() => setView('login')}>
+                  Đã có tài khoản? {" "}
+                  <button type="button" className="link-button" onClick={() => setView("login")}>
                     Đăng nhập
                   </button>
                 </span>
@@ -156,7 +227,7 @@ function AuthModal({ open, onClose }) {
 }
 
 function AuthForm({ mode }) {
-  const isLogin = mode === 'login';
+  const isLogin = mode === "login";
 
   return (
     <form className="auth-form">
@@ -189,12 +260,12 @@ function AuthForm({ mode }) {
       )}
 
       <label className="field">
-        <span>{isLogin ? 'Mật khẩu' : 'Tạo mật khẩu'}</span>
+        <span>{isLogin ? "Mật khẩu" : "Tạo mật khẩu"}</span>
         <input
           type="password"
           name="password"
           placeholder="••••••••"
-          autoComplete={isLogin ? 'current-password' : 'new-password'}
+          autoComplete={isLogin ? "current-password" : "new-password"}
         />
       </label>
 
@@ -209,7 +280,7 @@ function AuthForm({ mode }) {
         <div className="form-row">
           <label className="checkbox">
             <input type="checkbox" name="remember" defaultChecked />
-            <span>Ghi nhớ tôi</span>
+            <span>Ghi nhớ tài khoản</span>
           </label>
           <button type="button" className="link-button">
             Quên mật khẩu?
@@ -218,15 +289,95 @@ function AuthForm({ mode }) {
       )}
 
       <button className="primary-btn" type="submit">
-        {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
+        {isLogin ? "Đăng nhập" : "Tạo tài khoản"}
       </button>
     </form>
   );
 }
 
-function GameCard({ game, variant, extraClass }) {
+function BracketBoard({ onSectionSelect }) {
   return (
-    <div className={`game-card game-card--${variant} ${extraClass || ''}`}>
+    <section className="board">
+      <div className="board-viewport">
+        <div className="round-anchor round-anchor--qf" aria-hidden />
+        <div className="round-anchor round-anchor--semi" aria-hidden />
+        <div className="round-anchor round-anchor--final" aria-hidden />
+        <div className="round-anchor round-anchor--champ" aria-hidden />
+
+        <div className="board-grid">
+          <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" onClick={() => onSectionSelect("g1")} />
+          <GameCard game={quarterGames[1]} variant="quarter" extraClass="pos-q2" onClick={() => onSectionSelect("g2")} />
+          <GameCard game={quarterGames[2]} variant="quarter" extraClass="pos-q3" onClick={() => onSectionSelect("g3")} />
+          <GameCard game={quarterGames[3]} variant="quarter" extraClass="pos-q4" onClick={() => onSectionSelect("g4")} />
+
+          <GameCard game={semiGames[0]} variant="semi" extraClass="pos-s1" onClick={() => onSectionSelect("g5")} />
+          <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" onClick={() => onSectionSelect("g6")} />
+
+          <GameCard game={finalGame} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
+          <ChampionCard extraClass="pos-champion" />
+
+          <Connector className="connector connector-q12" mode="q" />
+          <Connector className="connector connector-q34" mode="q" />
+          <Connector className="connector connector-semis" mode="semi" />
+          <Connector className="connector connector-final" mode="final" />
+
+          <div className="round-label round-label--qf">Vòng bảng</div>
+          <div className="round-label round-label--semi">Bán kết</div>
+          <div className="round-label round-label--final">Chung kết</div>
+          <div className="round-label round-label--champ">Vô địch</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResultsFeed({ selectedLabel, onBack }) {
+  return (
+    <section className="results">
+      <div className="results-header">
+        <div>
+          <p className="eyebrow">Trang kết quả</p>
+          <h2>Tất cả trận đấu</h2>
+          {selectedLabel && <p className="muted">Bạn vừa chọn: {selectedLabel}. Danh sách dưới đây gồm toàn bộ trận đang/đã diễn ra.</p>}
+        </div>
+        <div className="results-actions">
+          <button className="primary-btn ghost-btn" type="button" onClick={onBack}>
+            Quay lại cây
+          </button>
+        </div>
+      </div>
+
+      <div className="match-days">
+        {matchDays.map((day) => (
+          <article key={day.id} className="match-day">
+            <div className="match-day__heading">{day.label}</div>
+            <div className="match-list">
+              {day.matches.map((match) => (
+                <MatchCard key={match.id} match={match} />
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function GameCard({ game, variant, extraClass, onClick }) {
+  const clickable = typeof onClick === "function";
+  return (
+    <div
+      className={`game-card game-card--${variant} ${extraClass || ""} ${clickable ? "game-card--link" : ""}`}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : -1}
+      onKeyDown={(e) => {
+        if (clickable && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+    >
       <div className="game-label">{game.label}</div>
       {game.slots.map((slot, index) => (
         <div key={`${game.id}-slot-${index}`} className="slot">
@@ -239,7 +390,7 @@ function GameCard({ game, variant, extraClass }) {
 
 function ChampionCard({ extraClass }) {
   return (
-    <div className={`champion-card ${extraClass || ''}`}>
+    <div className={`champion-card ${extraClass || ""}`}>
       <div className="cup-icon">
         <div className="cup-bowl" />
         <div className="cup-base" />
@@ -253,17 +404,17 @@ function ChampionCard({ extraClass }) {
 }
 
 function Connector({ className, mode }) {
-  const isSemi = mode === 'semi';
-  const isFinal = mode === 'final';
-  const viewBox = isSemi ? '0 0 140 400' : isFinal ? '0 0 120 220' : '0 0 140 200';
+  const isSemi = mode === "semi";
+  const isFinal = mode === "final";
+  const viewBox = isSemi ? "0 0 140 400" : isFinal ? "0 0 120 220" : "0 0 140 200";
   let path;
 
   if (isSemi) {
-    path = 'M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200';
+    path = "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200";
   } else if (isFinal) {
-    path = 'M0 110 C 30 110 60 110 120 110';
+    path = "M0 110 C 30 110 60 110 120 110";
   } else {
-    path = 'M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100';
+    path = "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
   }
 
   return (
@@ -271,6 +422,66 @@ function Connector({ className, mode }) {
       <svg viewBox={viewBox} preserveAspectRatio="none" className="connector-svg">
         <path className="connector-path" d={path} />
       </svg>
+    </div>
+  );
+}
+
+function MatchCard({ match }) {
+  const statusLabel =
+    match.status === "live"
+      ? `LIVE ${match.minute || ""}`.trim()
+      : match.status === "ft"
+      ? "End"
+      : match.kickoff
+      ? `Bắt đầu ${match.kickoff}`
+      : "Sắp diễn ra";
+
+  return (
+    <article className={`match-card match-card--${match.status}`}>
+      <div className="match-meta">
+        <span className="competition">{match.competition}</span>
+        {match.kickoff && <span className="kickoff">{match.kickoff}</span>}
+      </div>
+
+      <div className="match-main">
+        <TeamCell team={match.home} />
+        <div className="scoreline">
+          <span className="score">{match.home.score ?? "-"}</span>
+          <span className="dash">-</span>
+          <span className="score">{match.away.score ?? "-"}</span>
+        </div>
+        <TeamCell team={match.away} align="right" />
+      </div>
+
+      <div className="match-status">
+        <StatusPill status={match.status} label={statusLabel} />
+        {match.note && <span className="status-note">{match.note}</span>}
+      </div>
+    </article>
+  );
+}
+
+function TeamCell({ team, align = "left" }) {
+  return (
+    <div className={`team ${align === "right" ? "team--right" : ""}`}>
+      <div className="team-badge" style={{ background: team.color || "rgba(255,255,255,0.06)" }}>
+        <span>{team.badge || team.name.charAt(0)}</span>
+      </div>
+      <div className="team-name">{team.name}</div>
+    </div>
+  );
+}
+
+function StatusPill({ status, label }) {
+  return <span className={`status-pill status-pill--${status}`}>{label}</span>;
+}
+
+function BottomCta({ onClick }) {
+  return (
+    <div className="bottom-cta">
+      <button className="primary-btn bottom-cta__btn" type="button" onClick={onClick}>
+        Mở trang kết quả
+      </button>
     </div>
   );
 }
