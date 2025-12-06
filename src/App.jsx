@@ -697,8 +697,8 @@ function MatchDetailModal({ match, onClose }) {
                 aria-label="Tỷ số đội khách"
               />
               <div className="predict-team predict-team--right">
-                <span className="predict-team__name">{match.away.name}</span>
                 <span className="mini-badge" style={{ background: match.away.color || "#e85c5c" }}>{match.away.badge || match.away.name[0]}</span>
+                <span className="predict-team__name">{match.away.name}</span>
               </div>
             </div>
           </div>

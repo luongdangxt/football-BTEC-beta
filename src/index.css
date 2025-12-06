@@ -850,6 +850,12 @@ body {
   font-size: 13px;
 }
 
+.predict-team--right,
+.predict-team--left {
+  flex-direction: column;
+  align-items: center;
+}
+
 .predict-team__name {
   text-align: center;
   line-height: 1.2;
