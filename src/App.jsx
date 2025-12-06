@@ -15,6 +15,8 @@ const semiGames = [
 const finalGame = { id: 'g7', label: 'Game 7', slots: ['Game 5 winner', 'Game 6 winner'], connectorHeight: 188 };
 
 export default function App() {
+  const [showAuth, setShowAuth] = React.useState(false);
+
   return (
     <div className="app">
       <div className="backdrop" />
@@ -22,10 +24,8 @@ export default function App() {
         <header className="hero">
           <div className="hero-text">
             <p className="eyebrow">Football tournament</p>
-            <h1>Cây bracket dự đoán</h1>
-            <p className="lede">
-              Bố cục ngang, 4 trận đầu vào, 2 trận bán kết, 1 trận chung kết kèm cúp vô địch giống hình mẫu.
-            </p>
+            <h1>Cay bracket du doan</h1>
+            <p className="lede">Bo cuc ngang, 4 tran dau vao, 2 tran ban ket, 1 tran chung ket kem cup va duong noi giong hinh mau.</p>
           </div>
           <div className="badge">
             <div className="badge-ball" />
@@ -33,6 +33,11 @@ export default function App() {
               <span className="badge-title">FOOTBALL</span>
               <span className="badge-sub">TOURNAMENT</span>
             </div>
+          </div>
+          <div className="hero-actions">
+            <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
+              Đăng nhập
+            </button>
           </div>
         </header>
 
@@ -67,8 +72,113 @@ export default function App() {
             </div>
           </div>
         </section>
+        <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
       </main>
     </div>
+  );
+}
+
+function AuthModal({ open, onClose }) {
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    };
+    if (open) {
+      window.addEventListener('keydown', handler);
+    }
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="auth-modal-backdrop" role="dialog" aria-modal="true">
+      <div className="auth-modal">
+        <div className="auth-modal__head">
+          <div>
+            <p className="eyebrow">Football tournament</p>
+            <h2>Đăng nhập / Đăng ký</h2>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Đóng">
+            ×
+          </button>
+        </div>
+        <section className="auth">
+          <div className="auth-card">
+            <div className="auth-card__head">
+              <p className="eyebrow">Truy cap</p>
+              <h3>Đăng nhập</h3>
+              <p className="muted">Vào nhanh để lưu bracket, đồng bộ dự đoán trên mọi thiết bị.</p>
+            </div>
+            <AuthForm mode="login" />
+          </div>
+
+          <div className="auth-card auth-card--accent">
+            <div className="auth-card__head">
+              <p className="eyebrow">Tạo tài khoản</p>
+              <h3>Đăng ký</h3>
+              <p className="muted">Theo dõi tiến độ giải, nhận cập nhật và chia sẻ đường dẫn dự đoán.</p>
+            </div>
+            <AuthForm mode="register" />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function AuthForm({ mode }) {
+  const isLogin = mode === 'login';
+
+  return (
+    <form className="auth-form">
+      {!isLogin && (
+        <label className="field">
+          <span>Họ và tên</span>
+          <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" />
+        </label>
+      )}
+
+      <label className="field">
+        <span>Email</span>
+        <input type="email" name="email" placeholder="email@domain.com" autoComplete="email" />
+      </label>
+
+      <label className="field">
+        <span>{isLogin ? 'Mật khẩu' : 'Tạo mật khẩu'}</span>
+        <input
+          type="password"
+          name="password"
+          placeholder="••••••••"
+          autoComplete={isLogin ? 'current-password' : 'new-password'}
+        />
+      </label>
+
+      {!isLogin && (
+        <label className="field">
+          <span>Nhập lại mật khẩu</span>
+          <input type="password" name="confirmPassword" placeholder="••••••••" autoComplete="new-password" />
+        </label>
+      )}
+
+      {isLogin && (
+        <div className="form-row">
+          <label className="checkbox">
+            <input type="checkbox" name="remember" defaultChecked />
+            <span>Ghi nhớ tôi</span>
+          </label>
+          <button type="button" className="link-button">
+            Quên mật khẩu?
+          </button>
+        </div>
+      )}
+
+      <button className="primary-btn" type="submit">
+        {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
+      </button>
+    </form>
   );
 }
 
