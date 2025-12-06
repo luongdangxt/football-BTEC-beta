@@ -544,6 +544,33 @@ function StatusPill({ status, label }) {
 }
 
 function MatchDetailModal({ match, onClose }) {
+  const totalPred = (match.predictions || []).length;
+  const outcomeSummary = (match.predictions || []).reduce(
+    (acc, p) => {
+      if (!p.pick || !p.pick.includes("-")) return acc;
+      const [h, a] = p.pick.split("-").map((v) => parseInt(v.trim(), 10));
+      if (Number.isNaN(h) || Number.isNaN(a)) return acc;
+      if (h > a) acc.home += 1;
+      else if (h < a) acc.away += 1;
+      else acc.draw += 1;
+      return acc;
+    },
+    { home: 0, draw: 0, away: 0 }
+  );
+  const homeRaw = totalPred ? (outcomeSummary.home / totalPred) * 100 : 0;
+  const drawRaw = totalPred ? (outcomeSummary.draw / totalPred) * 100 : 0;
+  const awayRaw = totalPred ? (outcomeSummary.away / totalPred) * 100 : 0;
+  let homePct = Math.round(homeRaw);
+  let drawPct = Math.round(drawRaw);
+  let awayPct = Math.round(awayRaw);
+  const remainder = 100 - (homePct + drawPct + awayPct);
+  if (remainder !== 0) {
+    const maxVal = Math.max(homeRaw, drawRaw, awayRaw);
+    if (maxVal === homeRaw) homePct += remainder;
+    else if (maxVal === drawRaw) drawPct += remainder;
+    else awayPct += remainder;
+  }
+
   const maskName = (name) => {
     if (!name) return "";
     if (name.length <= 2) return name[0] + "*";
@@ -606,7 +633,7 @@ function MatchDetailModal({ match, onClose }) {
           <div className="predict-list">
             <div className="predict-list__head">
               <p className="eyebrow">Người dự đoán</p>
-              <span className="muted">{(match.predictions || []).length} người</span>
+              <span className="muted">{totalPred} người</span>
             </div>
             <div className="predict-list__body">
               {(match.predictions || []).map((p, idx) => (
@@ -617,6 +644,41 @@ function MatchDetailModal({ match, onClose }) {
               ))}
               {(match.predictions || []).length === 0 && <span className="muted">Chưa có dự đoán</span>}
             </div>
+            {totalPred > 0 && (
+              <div className="predict-summary">
+                <p className="eyebrow">Tỷ lệ dự đoán</p>
+                <div className="predict-bar predict-bar--stack">
+                  <div className="predict-segment predict-segment--home" style={{ width: `${homePct}%` }}>
+                    {homePct > 10 && <span>{homePct}%</span>}
+                  </div>
+                  <div className="predict-segment predict-segment--draw" style={{ width: `${drawPct}%` }}>
+                    {drawPct > 10 && <span>{drawPct}%</span>}
+                  </div>
+                  <div className="predict-segment predict-segment--away" style={{ width: `${awayPct}%` }}>
+                    {awayPct > 10 && <span>{awayPct}%</span>}
+                  </div>
+                </div>
+                <div className="predict-summary__legend">
+                  <span className="legend-dot legend-dot--home" /> Chủ thắng
+                  <span className="legend-dot legend-dot--draw" /> Hòa
+                  <span className="legend-dot legend-dot--away" /> Khách thắng
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="predict-action">
+            <button
+              className="primary-btn predict-btn"
+              type="button"
+              disabled={match.status === "ft"}
+              onClick={() => {
+                if (match.status === "ft") return;
+                window.alert("Bạn đã chọn Dự đoán tỷ số. (Placeholder hành động)");
+              }}
+            >
+              Dự đoán tỷ số
+            </button>
+            {match.status === "ft" && <span className="muted">Trận đã kết thúc - không nhận dự đoán.</span>}
           </div>
         </div>
       </div>

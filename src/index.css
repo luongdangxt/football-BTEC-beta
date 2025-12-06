@@ -697,6 +697,116 @@ body {
   font-weight: 700;
 }
 
+.predict-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.predict-summary__list {
+  display: grid;
+  gap: 8px;
+}
+
+.predict-summary__item {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.predict-bar {
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  height: 26px;
+  overflow: hidden;
+}
+
+.predict-bar__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #5bed9f, #d7f55a);
+  border-radius: 10px;
+}
+
+.predict-bar__text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #0c1f14;
+}
+
+.predict-bar--stack {
+  display: flex;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.predict-segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: #0c1f14;
+}
+
+.predict-segment--home {
+  background: #5bed9f;
+}
+
+.predict-segment--draw {
+  background: #b3c4ba;
+}
+
+.predict-segment--away {
+  background: #e85c5c;
+}
+
+.predict-summary__legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot--home {
+  background: #5bed9f;
+}
+
+.legend-dot--draw {
+  background: #b3c4ba;
+}
+
+.legend-dot--away {
+  background: #e85c5c;
+}
+
+.predict-action {
+  display: grid;
+  gap: 6px;
+}
+
+.predict-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .game-card--link {
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
