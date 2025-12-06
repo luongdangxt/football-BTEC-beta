@@ -673,10 +673,10 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
             <span>{match.away?.score ?? "-"}</span>
           </div>
           <div className="admin-team">
-            <span>{match.away?.name}</span>
             <span className={`mini-badge ${match.away?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away?.logo ? "transparent" : match.away?.color || "#e85c5c" }}>
               {match.away?.logo ? <img className="badge-img" src={match.away.logo} alt={`${match.away?.name} logo`} /> : (match.away?.badge || match.away?.name?.[0])}
             </span>
+            <span>{match.away?.name}</span>
           </div>
           {match.note && <span className="muted">{match.note}</span>}
         </div>
