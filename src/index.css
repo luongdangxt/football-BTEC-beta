@@ -597,14 +597,15 @@ body {
 }
 
 .match-detail {
-  width: min(720px, 100%);
+  width: min(620px, calc(100vw - 20px));
   background: linear-gradient(150deg, rgba(17, 48, 32, 0.95), rgba(10, 27, 18, 0.98));
   border: 1px solid var(--stroke);
   border-radius: 18px;
   box-shadow: var(--shadow);
   padding: 16px 18px 18px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  overflow: hidden;
 }
 
 .match-detail__head {
@@ -612,26 +613,32 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .match-detail__head h3 {
   margin: 6px 0 0;
+  font-size: 20px;
 }
 
 .match-detail__body {
   display: grid;
   gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .match-detail__teams {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .scoreline--lg {
-  font-size: 30px;
+  font-size: 24px;
 }
 
 .match-detail__meta {
@@ -639,6 +646,25 @@ body {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+
+.match-detail .team {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.match-detail .team-badge {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+}
+
+.match-detail .team-name {
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .match-detail__events {
@@ -796,6 +822,65 @@ body {
   background: #e85c5c;
 }
 
+.predict-input {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+}
+
+.predict-input__row {
+  display: grid;
+  grid-template-columns: auto 64px 24px 64px auto;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.predict-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 0;
+  font-size: 13px;
+}
+
+.predict-input__dash {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text);
+  text-align: center;
+  align-self: center;
+}
+
+.predict-score {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.mini-badge {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #0c1f14;
+  font-weight: 900;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .predict-action {
   display: grid;
   gap: 6px;
@@ -805,6 +890,11 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.predict-input__team input:focus {
+  outline: 1px solid rgba(91, 237, 159, 0.6);
+  box-shadow: 0 0 0 3px rgba(91, 237, 159, 0.2);
 }
 
 .game-card--link {

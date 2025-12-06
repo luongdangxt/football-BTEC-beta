@@ -570,6 +570,8 @@ function MatchDetailModal({ match, onClose }) {
     else if (maxVal === drawRaw) drawPct += remainder;
     else awayPct += remainder;
   }
+  const [homePick, setHomePick] = React.useState("");
+  const [awayPick, setAwayPick] = React.useState("");
 
   const maskName = (name) => {
     if (!name) return "";
@@ -649,22 +651,56 @@ function MatchDetailModal({ match, onClose }) {
                 <p className="eyebrow">Tỷ lệ dự đoán</p>
                 <div className="predict-bar predict-bar--stack">
                   <div className="predict-segment predict-segment--home" style={{ width: `${homePct}%` }}>
-                    {homePct > 10 && <span>{homePct}%</span>}
+                    {homePct > 8 && <span>{homePct}%</span>}
                   </div>
                   <div className="predict-segment predict-segment--draw" style={{ width: `${drawPct}%` }}>
-                    {drawPct > 10 && <span>{drawPct}%</span>}
+                    {drawPct > 8 && <span>{drawPct}%</span>}
                   </div>
                   <div className="predict-segment predict-segment--away" style={{ width: `${awayPct}%` }}>
-                    {awayPct > 10 && <span>{awayPct}%</span>}
+                    {awayPct > 8 && <span>{awayPct}%</span>}
                   </div>
                 </div>
                 <div className="predict-summary__legend">
-                  <span className="legend-dot legend-dot--home" /> Chủ thắng
-                  <span className="legend-dot legend-dot--draw" /> Hòa
-                  <span className="legend-dot legend-dot--away" /> Khách thắng
+                  <span className="legend-dot legend-dot--home" /> Chủ thắng ({homePct}%)
+                  <span className="legend-dot legend-dot--draw" /> Hòa ({drawPct}%)
+                  <span className="legend-dot legend-dot--away" /> Khách thắng ({awayPct}%)
                 </div>
               </div>
             )}
+          </div>
+          <div className="predict-input">
+            <p className="eyebrow">Dự đoán của bạn</p>
+            <div className="predict-input__row">
+              <div className="predict-team predict-team--left">
+                <span className="mini-badge" style={{ background: match.home.color || "#5bed9f" }}>{match.home.badge || match.home.name[0]}</span>
+                <span className="predict-team__name">{match.home.name}</span>
+              </div>
+              <input
+                className="predict-score"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={homePick}
+                onChange={(e) => setHomePick(e.target.value)}
+                aria-label="Tỷ số đội nhà"
+              />
+              <span className="predict-input__dash">-</span>
+              <input
+                className="predict-score"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={awayPick}
+                onChange={(e) => setAwayPick(e.target.value)}
+                aria-label="Tỷ số đội khách"
+              />
+              <div className="predict-team predict-team--right">
+                <span className="predict-team__name">{match.away.name}</span>
+                <span className="mini-badge" style={{ background: match.away.color || "#e85c5c" }}>{match.away.badge || match.away.name[0]}</span>
+              </div>
+            </div>
           </div>
           <div className="predict-action">
             <button
