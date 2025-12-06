@@ -169,9 +169,8 @@ export default function App() {
       <main className="shell">
         <header className="hero">
           <div className="hero-text">
-            <p className="eyebrow">Football tournament</p>
-            <h1>Cây giải đấu & trang kết quả</h1>
-            <p className="lede">Cây chỉ để xem bố cục giải. Bấm vào bảng/bán kết/chung kết để mở trang kết quả đang diễn ra.</p>
+            {/* <p className="eyebrow">BTEC FOOTBALL CHAMPIONSHIP 2025</p> */}
+            <h1>BTEC FOOTBALL CHAMPIONSHIP 2025</h1>
           </div>
           <div className="badge">
             <div className="badge-ball" />
@@ -394,12 +393,11 @@ function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
         <div>
           <p className="eyebrow">Trang kết quả</p>
           <h2>Tất cả trận đấu</h2>
-          {selectedLabel && <p className="muted">Bạn vừa chọn: {selectedLabel}. Danh sách dưới đây gồm toàn bộ trận đang/đã diễn ra.</p>}
         </div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" type="button" onClick={onBack}>
+          {/* <button className="primary-btn ghost-btn" type="button" onClick={onBack}>
             Quay lại cây
-          </button>
+          </button> */}
         </div>
       </div>
 
