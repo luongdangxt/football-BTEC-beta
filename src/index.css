@@ -528,6 +528,13 @@ body {
   margin-top: 10px;
 }
 
+.admin-match-summary img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .admin-team {
   display: inline-flex;
   align-items: center;
@@ -572,9 +579,14 @@ body {
   gap: 8px;
 }
 
+.logo-upload input[type="file"] {
+  color: var(--text);
+  font-size: 13px;
+}
+
 .logo-preview {
-  width: 80px;
-  height: 80px;
+  width: 360px;
+  height: 360px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--stroke);
@@ -584,7 +596,7 @@ body {
 .logo-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -732,8 +744,8 @@ body {
 }
 
 .team-badge {
-  width: 34px;
-  height: 34px;
+  width: 168px;
+  height: 168px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   display: grid;
@@ -744,10 +756,22 @@ body {
   overflow: hidden;
 }
 
+.team-badge--logo {
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .team-badge img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
+}
+
+.badge-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
@@ -1113,9 +1137,10 @@ body {
 }
 
 .mini-badge {
-  min-width: 32px;
-  height: 28px;
-  padding: 0 6px;
+  width: 168px;
+  height: 168px;
+  min-width: 168px;
+  padding: 0;
   display: grid;
   place-items: center;
   border-radius: 10px;
@@ -1127,12 +1152,13 @@ body {
 
 .mini-badge--logo {
   padding: 0;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .mini-badge img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 

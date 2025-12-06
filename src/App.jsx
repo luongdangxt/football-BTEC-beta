@@ -663,7 +663,7 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
         <div className="admin-match-summary">
           <div className="admin-team">
             <span className={`mini-badge ${match.home?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home?.logo ? "transparent" : match.home?.color || "#5bed9f" }}>
-              {match.home?.logo ? <img src={match.home.logo} alt={`${match.home?.name} logo`} /> : (match.home?.badge || match.home?.name?.[0])}
+              {match.home?.logo ? <img className="badge-img" src={match.home.logo} alt={`${match.home?.name} logo`} /> : (match.home?.badge || match.home?.name?.[0])}
             </span>
             <span>{match.home?.name}</span>
           </div>
@@ -675,7 +675,7 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
           <div className="admin-team">
             <span>{match.away?.name}</span>
             <span className={`mini-badge ${match.away?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away?.logo ? "transparent" : match.away?.color || "#e85c5c" }}>
-              {match.away?.logo ? <img src={match.away.logo} alt={`${match.away?.name} logo`} /> : (match.away?.badge || match.away?.name?.[0])}
+              {match.away?.logo ? <img className="badge-img" src={match.away.logo} alt={`${match.away?.name} logo`} /> : (match.away?.badge || match.away?.name?.[0])}
             </span>
           </div>
           {match.note && <span className="muted">{match.note}</span>}
@@ -968,7 +968,7 @@ function TeamCell({ team, align = "left" }) {
   return (
     <div className={`team ${align === "right" ? "team--right" : ""}`}>
       <div className={`team-badge ${hasLogo ? "team-badge--logo" : ""}`} style={{ background: hasLogo ? "transparent" : team.color || "rgba(255,255,255,0.06)" }}>
-        {hasLogo ? <img src={team.logo} alt={`${team.name} logo`} /> : <span>{team.badge || team.name.charAt(0)}</span>}
+        {hasLogo ? <img className="badge-img" src={team.logo} alt={`${team.name} logo`} /> : <span>{team.badge || team.name.charAt(0)}</span>}
       </div>
       <div className="team-name">{team.name}</div>
     </div>
@@ -1109,7 +1109,7 @@ function MatchDetailModal({ match, onClose }) {
             <div className="predict-input__row">
               <div className="predict-team predict-team--left">
                 <span className={`mini-badge ${match.home.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home.logo ? "transparent" : match.home.color || "#5bed9f" }}>
-                  {match.home.logo ? <img src={match.home.logo} alt={`${match.home.name} logo`} /> : (match.home.badge || match.home.name[0])}
+                  {match.home.logo ? <img className="badge-img" src={match.home.logo} alt={`${match.home.name} logo`} /> : (match.home.badge || match.home.name[0])}
                 </span>
                 <span className="predict-team__name">{match.home.name}</span>
               </div>
@@ -1136,7 +1136,7 @@ function MatchDetailModal({ match, onClose }) {
               />
               <div className="predict-team predict-team--right">
                 <span className={`mini-badge ${match.away.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away.logo ? "transparent" : match.away.color || "#e85c5c" }}>
-                  {match.away.logo ? <img src={match.away.logo} alt={`${match.away.name} logo`} /> : (match.away.badge || match.away.name[0])}
+                  {match.away.logo ? <img className="badge-img" src={match.away.logo} alt={`${match.away.name} logo`} /> : (match.away.badge || match.away.name[0])}
                 </span>
                 <span className="predict-team__name">{match.away.name}</span>
               </div>
