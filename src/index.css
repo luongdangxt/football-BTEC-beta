@@ -254,6 +254,10 @@ body {
   color: var(--muted);
 }
 
+.uppercase-input {
+  text-transform: uppercase;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

@@ -160,17 +160,33 @@ function AuthForm({ mode }) {
 
   return (
     <form className="auth-form">
-      {!isLogin && (
-        <label className="field">
-          <span>Họ và tên</span>
-          <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" />
-        </label>
-      )}
-
       <label className="field">
-        <span>Email</span>
-        <input type="email" name="email" placeholder="email@domain.com" autoComplete="email" />
+        <span>MSV</span>
+        <input
+          type="text"
+          name="studentId"
+          className="uppercase-input"
+          placeholder="VD: BH01234"
+          autoComplete="username"
+          onChange={(e) => {
+            e.target.value = e.target.value.toUpperCase();
+          }}
+        />
       </label>
+
+      {!isLogin && (
+        <>
+          <label className="field">
+            <span>Họ và tên</span>
+            <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" />
+          </label>
+
+          <label className="field">
+            <span>Số điện thoại</span>
+            <input type="tel" name="phone" placeholder="09xx xxx xxx" autoComplete="tel" />
+          </label>
+        </>
+      )}
 
       <label className="field">
         <span>{isLogin ? 'Mật khẩu' : 'Tạo mật khẩu'}</span>
