@@ -24,7 +24,7 @@ const sectionMatches = {
   g7: { label: "Chung kết" },
 };
 
-const matchDays = [
+const initialMatchDays = [
   {
     id: "yesterday",
     label: "Hôm qua, 18 Jan 2018",
@@ -153,13 +153,82 @@ const matchDays = [
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
   const [view, setView] = React.useState("bracket");
+  const [matchDays, setMatchDays] = React.useState(initialMatchDays);
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
+  const [user, setUser] = React.useState(null);
+
+  const isAdmin = user?.role === "admin";
 
   const handleSectionSelect = (sectionId) => {
     setSelectedSection(sectionId);
     setView("results");
   };
+
+  const handleAddDay = (day) => {
+    if (!day?.id || !day?.label) return;
+    setMatchDays((prev) => {
+      if (prev.some((d) => d.id === day.id)) return prev;
+      return [...prev, { ...day, matches: day.matches || [] }];
+    });
+  };
+
+  const handleUpdateDay = (dayId, updates) => {
+    setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
+  };
+
+  const handleAddMatch = (dayId, match) => {
+    if (!dayId || !match) return;
+    const matchId = match.id || `${dayId}-${Date.now()}`;
+    setMatchDays((prev) =>
+      prev.map((day) => (day.id === dayId ? { ...day, matches: [...(day.matches || []), { ...match, id: matchId }] } : day))
+    );
+  };
+
+  const handleUpdateMatch = (dayId, matchId, updates) => {
+    setMatchDays((prev) =>
+      prev.map((day) =>
+        day.id === dayId
+          ? { ...day, matches: (day.matches || []).map((m) => (m.id === matchId ? { ...m, ...updates, id: matchId } : m)) }
+          : day
+      )
+    );
+    setSelectedMatch((prev) => (prev?.id === matchId ? { ...prev, ...updates, id: matchId } : prev));
+  };
+
+  const handleDeleteMatch = (dayId, matchId) => {
+    setMatchDays((prev) =>
+      prev.map((day) => (day.id === dayId ? { ...day, matches: (day.matches || []).filter((m) => m.id !== matchId) } : day))
+    );
+    setSelectedMatch((prev) => (prev?.id === matchId ? null : prev));
+  };
+
+  const handleLogin = (payload) => {
+    const nextUser = payload || null;
+    setUser(nextUser);
+    setShowAuth(false);
+    if (nextUser?.role === "admin") {
+      setView("admin");
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setSelectedMatch(null);
+    setView("bracket");
+  };
+
+  React.useEffect(() => {
+    const openAuthHandler = () => setShowAuth(true);
+    window.addEventListener("openAuth", openAuthHandler);
+    return () => window.removeEventListener("openAuth", openAuthHandler);
+  }, []);
+
+  React.useEffect(() => {
+    if (view === "admin" && !isAdmin) {
+      setView("bracket");
+    }
+  }, [view, isAdmin]);
 
   const selectedLabel = selectedSection ? sectionMatches[selectedSection]?.label : null;
 
@@ -182,17 +251,70 @@ export default function App() {
           </div>
         </header>
 
+        <div className="page-tabs">
+          <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
+            Cây đấu
+          </button>
+          <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
+            Kết quả
+          </button>
+          {isAdmin && (
+            <button className={`page-tab ${view === "admin" ? "is-active" : ""}`} type="button" onClick={() => setView("admin")}>
+              Admin
+            </button>
+          )}
+        </div>
+
+        <div className="user-strip">
+          {user ? (
+            <>
+              <span className="muted">
+                Đang đăng nhập: <strong>{user.fullName || user.studentId || "Người dùng"}</strong>
+                {isAdmin && " (Admin)"}
+              </span>
+              {isAdmin && view !== "admin" && (
+                <button className="primary-btn ghost-btn" type="button" onClick={() => setView("admin")}>
+                  Vào trang Admin
+                </button>
+              )}
+              <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            </>
+          ) : (
+            <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
+              Đăng nhập
+            </button>
+          )}
+        </div>
+
         {view === "bracket" ? (
           <section className="section-block section-block--bare">
             <BracketBoard onSectionSelect={handleSectionSelect} />
           </section>
+        ) : view === "results" ? (
+          <section className="section-block">
+            <ResultsFeed
+              matchDays={matchDays}
+              selectedLabel={selectedLabel}
+              onBack={() => setView("bracket")}
+              onSelectMatch={setSelectedMatch}
+              onOpenAuth={() => setShowAuth(true)}
+            />
+          </section>
         ) : (
           <section className="section-block">
-            <ResultsFeed selectedLabel={selectedLabel} onBack={() => setView("bracket")} onSelectMatch={setSelectedMatch} />
+            <AdminPanel
+              matchDays={matchDays}
+              onUpdateDay={handleUpdateDay}
+              onAddMatch={handleAddMatch}
+              onUpdateMatch={handleUpdateMatch}
+              onDeleteMatch={handleDeleteMatch}
+            />
           </section>
         )}
 
-        <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+        <AuthModal open={showAuth} onClose={() => setShowAuth(false)} onLogin={handleLogin} />
         {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
         {selectedMatch && <MatchDetailModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
       </main>
@@ -200,7 +322,7 @@ export default function App() {
   );
 }
 
-function AuthModal({ open, onClose }) {
+function AuthModal({ open, onClose, onLogin }) {
   const [view, setView] = React.useState("login");
 
   React.useEffect(() => {
@@ -243,7 +365,7 @@ function AuthModal({ open, onClose }) {
                 <h3>Đăng nhập</h3>
                 <p className="muted">Lưu bracket và đồng bộ dự đoán trên mọi thiết bị.</p>
               </div>
-              <AuthForm mode="login" />
+              <AuthForm mode="login" onSubmit={onLogin} />
               <div className="auth-foot">
                 <span>
                   Chưa có tài khoản? {" "}
@@ -260,7 +382,7 @@ function AuthModal({ open, onClose }) {
                 <h3>Đăng ký</h3>
                 <p className="muted">Theo dõi giải đấu, nhận nhắc lịch và chia sẻ đường dẫn dự đoán.</p>
               </div>
-              <AuthForm mode="register" />
+              <AuthForm mode="register" onSubmit={onLogin} />
               <div className="auth-foot">
                 <span>
                   Đã có tài khoản? {" "}
@@ -277,11 +399,21 @@ function AuthModal({ open, onClose }) {
   );
 }
 
-function AuthForm({ mode }) {
+function AuthForm({ mode, onSubmit }) {
   const isLogin = mode === "login";
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const studentId = (formData.get("studentId") || "").toString().trim();
+    const fullName = (formData.get("fullName") || "").toString().trim();
+    const password = (formData.get("password") || "").toString().trim();
+    const role = studentId.toLowerCase() === "admin" || password === "admin" ? "admin" : "user";
+    onSubmit?.({ studentId, fullName, role });
+  };
+
   return (
-    <form className="auth-form">
+    <form className="auth-form" onSubmit={handleSubmit}>
       <label className="field">
         <span>MSV</span>
         <input
@@ -382,19 +514,20 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
+function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onOpenAuth }) {
   return (
     <section className="results">
       <div className="results-header">
         <div>
           <p className="eyebrow">Trang kết quả</p>
           <h2>Tất cả trận đấu</h2>
+          {selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}
         </div>
         <div className="results-actions">
           <button className="primary-btn ghost-btn" type="button" onClick={() => onBack()}>
             Quay lại cây
           </button>
-          <button className="primary-btn ghost-btn" type="button" onClick={() => onBack() || window.dispatchEvent(new Event('openAuth'))}>
+          <button className="primary-btn ghost-btn" type="button" onClick={() => onOpenAuth?.()}>
             Đăng nhập
           </button>
         </div>
@@ -405,7 +538,7 @@ function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
           <article key={day.id} className="match-day">
             <div className="match-day__heading">{day.label}</div>
             <div className="match-list">
-              {day.matches.map((match) => (
+              {(day.matches || []).map((match) => (
                 <MatchCard key={match.id} match={match} onSelect={() => onSelectMatch?.(match)} />
               ))}
             </div>
@@ -413,6 +546,311 @@ function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function AdminPanel({ matchDays = [], onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
+  const selectedDay = matchDays[0];
+  const [dayLabelDraft, setDayLabelDraft] = React.useState(selectedDay?.label || "");
+
+  React.useEffect(() => {
+    setDayLabelDraft(selectedDay?.label || "");
+  }, [selectedDay?.id, selectedDay?.label]);
+
+  return (
+    <section className="admin-panel">
+      <div className="results-header">
+        <div>
+          <p className="eyebrow">Trang admin</p>
+          <h2>Quản lý trận đấu</h2>
+        </div>
+      </div>
+
+      {selectedDay ? (
+        <div className="admin-grid">
+          <div className="admin-card">
+            <div className="admin-card__head">
+              <div>
+                <p className="eyebrow">Nhãn</p>
+                <h3>{selectedDay.label}</h3>
+              </div>
+              <span className="muted">{(selectedDay.matches || []).length} trận</span>
+            </div>
+            <div className="admin-inline-form">
+              <label className="field">
+                <span>Đổi tên nhãn</span>
+                <input type="text" value={dayLabelDraft} onChange={(e) => setDayLabelDraft(e.target.value)} />
+              </label>
+              <button className="primary-btn ghost-btn" type="button" onClick={() => onUpdateDay?.(selectedDay.id, { label: dayLabelDraft })}>
+                Lưu nhãn
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-card admin-card--wide">
+            <div className="admin-card__head">
+              <h4>Thêm trận mới</h4>
+            </div>
+            <AdminMatchForm
+              submitLabel="Thêm trận"
+              onSubmit={(payload) => {
+                onAddMatch?.(selectedDay.id, payload);
+              }}
+            />
+          </div>
+
+          <div className="admin-match-list">
+            {(selectedDay.matches || []).map((match) => (
+              <AdminMatchCard
+                key={match.id}
+                match={match}
+                onUpdate={(payload) => onUpdateMatch?.(selectedDay.id, match.id, payload)}
+                onDelete={() => onDeleteMatch?.(selectedDay.id, match.id)}
+              />
+            ))}
+            {(selectedDay.matches || []).length === 0 && <p className="muted">Chưa có trận nào trong nhãn này.</p>}
+          </div>
+        </div>
+      ) : (
+        <div className="admin-card">
+          <p className="muted">Thêm ngày mới để quản lý trận.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AdminMatchCard({ match, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = React.useState(false);
+
+  const statusLabel =
+    match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : match.status === "upcoming" ? "Sắp diễn ra" : match.status;
+
+  return (
+    <div className="admin-card admin-card--match">
+      <div className="admin-card__head">
+        <div>
+          <p className="eyebrow">{match.competition}</p>
+          <strong>
+            {match.home?.name} vs {match.away?.name}
+          </strong>
+          <div className="muted">
+            <span>{statusLabel}</span>
+            {match.kickoff && <> • {match.kickoff}</>}
+            {match.minute && <> • {match.minute}</>}
+          </div>
+        </div>
+        <div className="admin-card__actions">
+          <button className="primary-btn ghost-btn" type="button" onClick={() => setIsEditing((v) => !v)}>
+            {isEditing ? "Huỷ" : "Sửa"}
+          </button>
+          <button className="primary-btn" type="button" onClick={onDelete}>
+            Xóa
+          </button>
+        </div>
+      </div>
+
+      {isEditing ? (
+        <AdminMatchForm
+          initialMatch={match}
+          submitLabel="Lưu thay đổi"
+          onSubmit={(payload) => {
+            onUpdate?.(payload);
+            setIsEditing(false);
+          }}
+        />
+      ) : (
+        <div className="admin-match-summary">
+          <div className="admin-team">
+            <span className={`mini-badge ${match.home?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home?.logo ? "transparent" : match.home?.color || "#5bed9f" }}>
+              {match.home?.logo ? <img src={match.home.logo} alt={`${match.home?.name} logo`} /> : (match.home?.badge || match.home?.name?.[0])}
+            </span>
+            <span>{match.home?.name}</span>
+          </div>
+          <div className="admin-score">
+            <span>{match.home?.score ?? "-"}</span>
+            <span className="dash">-</span>
+            <span>{match.away?.score ?? "-"}</span>
+          </div>
+          <div className="admin-team">
+            <span>{match.away?.name}</span>
+            <span className={`mini-badge ${match.away?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away?.logo ? "transparent" : match.away?.color || "#e85c5c" }}>
+              {match.away?.logo ? <img src={match.away.logo} alt={`${match.away?.name} logo`} /> : (match.away?.badge || match.away?.name?.[0])}
+            </span>
+          </div>
+          {match.note && <span className="muted">{match.note}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminMatchForm({ initialMatch, submitLabel = "Lưu", onSubmit }) {
+  const emptyForm = {
+    competition: "",
+    status: "upcoming",
+    kickoff: "",
+    minute: "",
+    homeName: "",
+    homeLogo: "",
+    homeScore: "",
+    awayName: "",
+    awayLogo: "",
+    awayScore: "",
+  };
+
+  const toFormState = (match) => ({
+    competition: match?.competition || "",
+    status: match?.status || "upcoming",
+    kickoff: match?.kickoff || "",
+    minute: match?.minute || "",
+    homeName: match?.home?.name || "",
+    homeLogo: match?.home?.logo || "",
+    homeScore: match?.home?.score ?? "",
+    awayName: match?.away?.name || "",
+    awayLogo: match?.away?.logo || "",
+    awayScore: match?.away?.score ?? "",
+  });
+
+  const [form, setForm] = React.useState(toFormState(initialMatch) || emptyForm);
+
+  React.useEffect(() => {
+    setForm(toFormState(initialMatch));
+  }, [initialMatch]);
+
+  const parseScore = (val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    const num = Number(val);
+    return Number.isNaN(num) ? undefined : num;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const existingHomeColor = initialMatch?.home?.color;
+    const existingAwayColor = initialMatch?.away?.color;
+    const payload = {
+      id: initialMatch?.id,
+      competition: form.competition || "Friendly",
+      status: form.status || "upcoming",
+      kickoff: form.kickoff || undefined,
+      minute: form.minute || undefined,
+      note: initialMatch?.note || "",
+      home: {
+        name: form.homeName || "Home",
+        badge: form.homeName ? form.homeName.slice(0, 3).toUpperCase() : "HOM",
+        color: existingHomeColor || "#5bed9f",
+        logo: form.homeLogo || undefined,
+        score: parseScore(form.homeScore),
+      },
+      away: {
+        name: form.awayName || "Away",
+        badge: form.awayName ? form.awayName.slice(0, 3).toUpperCase() : "AWY",
+        color: existingAwayColor || "#e85c5c",
+        logo: form.awayLogo || undefined,
+        score: parseScore(form.awayScore),
+      },
+      predictions: initialMatch?.predictions || [],
+    };
+    onSubmit?.(payload);
+    if (!initialMatch) {
+      setForm(emptyForm);
+    }
+  };
+
+  const bind = (field) => ({
+    value: form[field],
+    onChange: (e) => setForm((prev) => ({ ...prev, [field]: e.target.value })),
+  });
+
+  const handleLogoChange = (field) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, [field]: reader.result || "" }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <form className="admin-form" onSubmit={handleSubmit}>
+      <div className="admin-form-row">
+        <label className="field">
+          <span>Giải đấu</span>
+          <input type="text" placeholder="FA Cup" {...bind("competition")} />
+        </label>
+        <label className="field">
+          <span>Trạng thái</span>
+          <select className="field-select" {...bind("status")}>
+            <option value="upcoming">Sắp diễn ra</option>
+            <option value="live">Đang diễn ra</option>
+            <option value="ft">Kết thúc</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>Giờ bắt đầu</span>
+          <input type="text" placeholder="03:30" {...bind("kickoff")} />
+        </label>
+        <label className="field">
+          <span>Phút (nếu live)</span>
+          <input type="text" placeholder="45'" {...bind("minute")} />
+        </label>
+      </div>
+
+      <div className="admin-form-row admin-form-row--teams">
+        <div className="admin-team-col">
+          <p className="eyebrow">Đội nhà</p>
+          <label className="field">
+            <span>Tên</span>
+            <input type="text" placeholder="Chelsea" {...bind("homeName")} />
+          </label>
+          <div className="logo-upload">
+            <label className="field">
+              <span>Logo đội</span>
+              <input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} />
+            </label>
+            {form.homeLogo && (
+              <div className="logo-preview">
+                <img src={form.homeLogo} alt="Logo đội nhà" />
+              </div>
+            )}
+          </div>
+          <label className="field">
+            <span>Tỷ số</span>
+            <input type="number" min="0" placeholder="0" {...bind("homeScore")} />
+          </label>
+        </div>
+
+        <div className="admin-team-col">
+          <p className="eyebrow">Đội khách</p>
+          <label className="field">
+            <span>Tên</span>
+            <input type="text" placeholder="Norwich" {...bind("awayName")} />
+          </label>
+          <div className="logo-upload">
+            <label className="field">
+              <span>Logo đội</span>
+              <input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} />
+            </label>
+            {form.awayLogo && (
+              <div className="logo-preview">
+                <img src={form.awayLogo} alt="Logo đội khách" />
+              </div>
+            )}
+          </div>
+          <label className="field">
+            <span>Tỷ số</span>
+            <input type="number" min="0" placeholder="0" {...bind("awayScore")} />
+          </label>
+        </div>
+      </div>
+
+      <div className="admin-actions-row">
+        <button className="primary-btn" type="submit">
+          {submitLabel}
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -526,10 +964,11 @@ function MatchCard({ match, onSelect }) {
 }
 
 function TeamCell({ team, align = "left" }) {
+  const hasLogo = Boolean(team.logo);
   return (
     <div className={`team ${align === "right" ? "team--right" : ""}`}>
-      <div className="team-badge" style={{ background: team.color || "rgba(255,255,255,0.06)" }}>
-        <span>{team.badge || team.name.charAt(0)}</span>
+      <div className={`team-badge ${hasLogo ? "team-badge--logo" : ""}`} style={{ background: hasLogo ? "transparent" : team.color || "rgba(255,255,255,0.06)" }}>
+        {hasLogo ? <img src={team.logo} alt={`${team.name} logo`} /> : <span>{team.badge || team.name.charAt(0)}</span>}
       </div>
       <div className="team-name">{team.name}</div>
     </div>
@@ -669,7 +1108,9 @@ function MatchDetailModal({ match, onClose }) {
             <p className="eyebrow">Dự đoán của bạn</p>
             <div className="predict-input__row">
               <div className="predict-team predict-team--left">
-                <span className="mini-badge" style={{ background: match.home.color || "#5bed9f" }}>{match.home.badge || match.home.name[0]}</span>
+                <span className={`mini-badge ${match.home.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home.logo ? "transparent" : match.home.color || "#5bed9f" }}>
+                  {match.home.logo ? <img src={match.home.logo} alt={`${match.home.name} logo`} /> : (match.home.badge || match.home.name[0])}
+                </span>
                 <span className="predict-team__name">{match.home.name}</span>
               </div>
               <input
@@ -694,7 +1135,9 @@ function MatchDetailModal({ match, onClose }) {
                 aria-label="Tỷ số đội khách"
               />
               <div className="predict-team predict-team--right">
-                <span className="mini-badge" style={{ background: match.away.color || "#e85c5c" }}>{match.away.badge || match.away.name[0]}</span>
+                <span className={`mini-badge ${match.away.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away.logo ? "transparent" : match.away.color || "#e85c5c" }}>
+                  {match.away.logo ? <img src={match.away.logo} alt={`${match.away.name} logo`} /> : (match.away.badge || match.away.name[0])}
+                </span>
                 <span className="predict-team__name">{match.away.name}</span>
               </div>
             </div>
