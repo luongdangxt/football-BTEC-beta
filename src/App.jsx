@@ -168,21 +168,17 @@ export default function App() {
       <div className="backdrop" />
       <main className="shell">
         <header className="hero">
-          <div className="hero-text">
-            {/* <p className="eyebrow">BTEC FOOTBALL CHAMPIONSHIP 2025</p> */}
-            <h1>BTEC FOOTBALL CHAMPIONSHIP 2025</h1>
-          </div>
-          <div className="badge">
-            <div className="badge-ball" />
-            <div className="badge-text">
-              <span className="badge-title">FOOTBALL</span>
-              <span className="badge-sub">TOURNAMENT</span>
+          <div className="hero-main">
+            <div className="badge">
+              <div className="badge-ball" />
+              <div className="badge-text">
+                <span className="badge-title">FOOTBALL</span>
+                <span className="badge-sub">TOURNAMENT</span>
+              </div>
             </div>
-          </div>
-          <div className="hero-actions">
-            <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
-              Đăng nhập
-            </button>
+            <div className="hero-text">
+              <h2>BTEC FOOTBALL CHAMPIONSHIP 2025</h2>
+            </div>
           </div>
         </header>
 
@@ -395,9 +391,12 @@ function ResultsFeed({ selectedLabel, onBack, onSelectMatch }) {
           <h2>Tất cả trận đấu</h2>
         </div>
         <div className="results-actions">
-          {/* <button className="primary-btn ghost-btn" type="button" onClick={onBack}>
+          <button className="primary-btn ghost-btn" type="button" onClick={() => onBack()}>
             Quay lại cây
-          </button> */}
+          </button>
+          <button className="primary-btn ghost-btn" type="button" onClick={() => onBack() || window.dispatchEvent(new Event('openAuth'))}>
+            Đăng nhập
+          </button>
         </div>
       </div>
 
