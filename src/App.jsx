@@ -1,18 +1,18 @@
 import React from 'react';
 
 const quarterGames = [
-  { id: 'g1', label: 'Game 1', slots: ['Team 1', 'Team 2'] },
-  { id: 'g2', label: 'Game 2', slots: ['Team 3', 'Team 4'] },
-  { id: 'g3', label: 'Game 3', slots: ['Team 5', 'Team 6'] },
-  { id: 'g4', label: 'Game 4', slots: ['Team 7', 'Team 8'] },
+  { id: 'g1', label: 'Bảng A', slots: ['Đội 1', 'Đội 2', 'Đội 3'] },
+  { id: 'g2', label: 'Bảng B', slots: ['Đội 4', 'Đội 5', 'Đội 6'] },
+  { id: 'g3', label: 'Bảng C', slots: ['Đội 7', 'Đội 8', 'Đội 9'] },
+  { id: 'g4', label: 'Bảng D', slots: ['Đội 10', 'Đội 11', 'Đội 12'] },
 ];
 
 const semiGames = [
-  { id: 'g5', label: 'Game 5', slots: ['Game 1 winner', 'Game 2 winner'], connectorHeight: 94 },
-  { id: 'g6', label: 'Game 6', slots: ['Game 3 winner', 'Game 4 winner'], connectorHeight: 94 },
+  { id: 'g5', label: 'Bán kết 1', slots: ['Nhất bảng A', 'Nhất bảng B'], connectorHeight: 94 },
+  { id: 'g6', label: 'Bán kết 2', slots: ['Nhất bảng C', 'Nhất bảng D'], connectorHeight: 94 },
 ];
 
-const finalGame = { id: 'g7', label: 'Game 7', slots: ['Game 5 winner', 'Game 6 winner'], connectorHeight: 188 };
+const finalGame = { id: 'g7', label: 'Chung kết', slots: ['Thắng bán kết 1', 'Thắng bán kết 2'], connectorHeight: 188 };
 
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
@@ -65,10 +65,10 @@ export default function App() {
               <Connector className="connector connector-semis" mode="semi" />
               <Connector className="connector connector-final" mode="final" />
 
-              <div className="round-label round-label--qf">Round 1</div>
-              <div className="round-label round-label--semi">Round 2</div>
-              <div className="round-label round-label--final">Final</div>
-              <div className="round-label round-label--champ">Champion</div>
+              <div className="round-label round-label--qf">Vòng bảng</div>
+              <div className="round-label round-label--semi">Bán kết</div>
+              <div className="round-label round-label--final">Chung kết</div>
+              <div className="round-label round-label--champ">Vô địch</div>
             </div>
           </div>
         </section>

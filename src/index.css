@@ -13,9 +13,9 @@
   --line: rgba(91, 237, 159, 0.8);
   --stroke: rgba(255, 255, 255, 0.08);
   --shadow: 0 18px 90px rgba(0, 0, 0, 0.35);
-  --game-height: 78px;
+  --game-height: 120px;
   --game-gap: 26px;
-  --step: 160px;
+  --step: 200px;
   --arm: 26px;
   --curve: 16px;
   --stroke-w: 2px;
@@ -354,7 +354,7 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: var(--col-game) var(--col-gap) var(--col-game) var(--col-gap) var(--col-game) var(--col-gap-sm) var(--col-game);
-  grid-template-rows: repeat(5, var(--step));
+  grid-template-rows: repeat(5, minmax(var(--step), auto));
   align-items: center;
   column-gap: 0;
   row-gap: 0;
