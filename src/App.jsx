@@ -955,10 +955,12 @@ function MatchCard({ match, onSelect }) {
         <TeamCell team={match.away} align="right" />
       </div>
 
-      <div className="match-status">
-        <StatusPill status={match.status} label={statusLabel} />
-        {match.note && <span className="status-note">{match.note}</span>}
-      </div>
+      {match.status !== "ft" && (
+        <div className="match-status">
+          <StatusPill status={match.status} label={statusLabel} />
+          {match.note && <span className="status-note">{match.note}</span>}
+        </div>
+      )}
     </article>
   );
 }
