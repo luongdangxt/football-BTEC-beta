@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 from bson import ObjectId
 from schemas import EventCreate, MatchCreate, MatchDetailResponse, MatchInfoUpdate, MatchResponse, PredictionCreate, FavoriteTeamVote, MatchScoreUpdate
-from database import match_collection, prediction_collection, vote_collection
+from database import match_collection, prediction_collection, vote_collection, user_collection
 from dependencies import get_current_user, RoleChecker
 from socket_manager import manager
 
@@ -65,9 +65,9 @@ async def predict_match(
     if not match:
         raise HTTPException(status_code=404, detail="Trận đấu không tồn tại")
 
-    # 2. Kiểm tra thời gian (Khóa trước khi trận bắt đầu)
-    if match.get("is_locked") or datetime.utcnow() >= match["start_time"]:
-        raise HTTPException(status_code=400, detail="Đã hết thời gian dự đoán cho trận này")
+    # 2. Kiểm tra thời gian (Khóa trước khi trận bắt đầu) + chặn khi đang/đã diễn ra
+    if match.get("is_locked") or match.get("status") in ("live", "ft") or datetime.utcnow() >= match["start_time"]:
+        raise HTTPException(status_code=400, detail="Trận này đang/đã diễn ra, không thể dự đoán.")
 
     # 3. Kiểm tra User đã dự đoán trận này chưa (Mỗi người 1 lần/trận)
     existing_pred = await prediction_collection.find_one({
@@ -82,6 +82,7 @@ async def predict_match(
     # 4. Lưu dự đoán
     new_pred = {
         "user_msv": current_user["msv"],
+        "user_name": current_user.get("full_name"),
         "match_id": prediction.match_id,
         "score_a": prediction.score_a,
         "score_b": prediction.score_b,
@@ -168,8 +169,17 @@ async def get_match_detail(match_id: str):
     wins_a, wins_b, draws = 0, 0, 0
     predictors_list = []
 
+    # Map MSV -> full_name để hiển thị
+    msvs = {p["user_msv"] for p in predictions} if predictions else set()
+    name_map = {}
+    if msvs:
+        cursor_users = user_collection.find({"msv": {"$in": list(msvs)}})
+        async for u in cursor_users:
+            name_map[u["msv"]] = u.get("full_name", u["msv"])
+
     for p in predictions:
         s_a, s_b = p["score_a"], p["score_b"]
+        display_name = p.get("user_name") or name_map.get(p["user_msv"]) or p["user_msv"]
         
         # Tính Stats
         if s_a > s_b: wins_a += 1
@@ -178,7 +188,7 @@ async def get_match_detail(match_id: str):
         
         # Thêm vào danh sách hiển thị (Tạm dùng MSV làm tên)
         predictors_list.append({
-            "name": p["user_msv"], # Sau này có thể join bảng User để lấy full_name
+            "name": display_name,
             "pick": f"{s_a}-{s_b}"
         })
 
