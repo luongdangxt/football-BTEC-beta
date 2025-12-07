@@ -730,7 +730,7 @@ body {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 32px;
-  padding: 12px 48px 18px;
+  padding: 18px 48px 30px;
   justify-items: center;
 }
 
@@ -804,6 +804,14 @@ body {
   align-items: center;
   gap: 10px;
   justify-content: space-between;
+}
+
+.match-status--center {
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: -20px;
+  margin-bottom: 8px;
 }
 
 .status-pill {

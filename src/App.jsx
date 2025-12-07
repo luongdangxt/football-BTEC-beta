@@ -945,6 +945,12 @@ function MatchCard({ match, onSelect }) {
         {match.kickoff && <span className="kickoff">{match.kickoff}</span>}
       </div>
 
+      {match.status !== "ft" && (
+        <div className="match-status match-status--center">
+          <StatusPill status={match.status} label={statusLabel} />
+        </div>
+      )}
+
       <div className="match-main">
         <TeamCell team={match.home} />
         <div className="scoreline">
@@ -954,13 +960,6 @@ function MatchCard({ match, onSelect }) {
         </div>
         <TeamCell team={match.away} align="right" />
       </div>
-
-      {match.status !== "ft" && (
-        <div className="match-status">
-          <StatusPill status={match.status} label={statusLabel} />
-          {match.note && <span className="status-note">{match.note}</span>}
-        </div>
-      )}
     </article>
   );
 }
