@@ -1820,3 +1820,61 @@ body {
     min-width: 80px;
   }
 }
+
+
+.admin-user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.admin-user-tile {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.admin-user-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-user-name {
+  font-weight: 800;
+}
+
+.admin-user-meta {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.user-status-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid var(--stroke);
+  color: var(--text);
+}
+
+.user-status-pill.is-active {
+  background: rgba(91, 237, 159, 0.16);
+  border-color: rgba(91, 237, 159, 0.4);
+}
+
+.user-status-pill.is-locked {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-user-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
