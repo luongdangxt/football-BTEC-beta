@@ -321,7 +321,7 @@ export default function App() {
           onAuthSubmit={handleAuthSubmit} 
         />
         {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
-        {selectedMatch && <MatchDetailModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
+        {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
       </main>
     </div>
   );
@@ -751,7 +751,7 @@ function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
 }
 
-function MatchDetailModal({ match, onClose }) {
+function MatchDetailModal({ match, user, onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
@@ -774,6 +774,16 @@ function MatchDetailModal({ match, onClose }) {
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
   const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "Ẩn danh";
+  const currentUserId = user?.studentId;
+  const hasPredicted = Boolean(
+    currentUserId &&
+    (
+      predictors.some(p => p.user_msv === currentUserId) ||
+      (match?.predictions || []).some(p => p.user_msv === currentUserId)
+    )
+  );
+  const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
+  const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
 
   return (
     <div className="match-detail-backdrop">
@@ -811,7 +821,15 @@ function MatchDetailModal({ match, onClose }) {
                <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
                <div className="predict-team">{displayMatch.team_b}</div>
              </div>
-             <div className="predict-action"><button className="primary-btn predict-btn" onClick={handlePredict} disabled={displayMatch.is_locked}>{displayMatch.is_locked ? "Đã khóa" : "Gửi dự đoán"}</button></div>
+            <div className="predict-action">
+              <button
+                className="primary-btn predict-btn"
+                onClick={handlePredict}
+                disabled={isClosed || hasPredicted}
+              >
+                {isClosed ? "Đã khóa" : hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

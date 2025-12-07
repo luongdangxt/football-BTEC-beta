@@ -189,7 +189,8 @@ async def get_match_detail(match_id: str):
         # Thêm vào danh sách hiển thị (Tạm dùng MSV làm tên)
         predictors_list.append({
             "name": display_name,
-            "pick": f"{s_a}-{s_b}"
+            "pick": f"{s_a}-{s_b}",
+            "user_msv": p["user_msv"]
         })
 
     # Tính %
