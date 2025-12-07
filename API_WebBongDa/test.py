@@ -6,8 +6,8 @@ from schemas import UserRegister
 # Sửa lại file test.py
 async def create_superuser():
     print("--- TẠO TÀI KHOẢN ADMIN ---")
-    msv = "ADMIN001"  # Sửa thành MSV
-    password = "Admin@a123"
+    msv = "A"  # Sửa thành MSV
+    password = "a"
     full_name = "System Admin" # Sửa thành full_name
 
     # 1. Kiểm tra tồn tại
