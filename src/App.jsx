@@ -773,15 +773,15 @@ function MatchDetailModal({ match, user, onClose }) {
   const displayMatch = detail || match; 
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
-  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "Ẩn danh";
+  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
   const currentUserId = user?.studentId;
-  const hasPredicted = Boolean(
-    currentUserId &&
-    (
-      predictors.some(p => p.user_msv === currentUserId) ||
-      (match?.predictions || []).some(p => p.user_msv === currentUserId)
-    )
-  );
+  const myPrediction = currentUserId
+    ? predictors.find(p => p.user_msv === currentUserId)
+    : null;
+  const hasPredicted = Boolean(myPrediction);
+  const sortedPredictors = myPrediction
+    ? [myPrediction, ...predictors.filter(p => p.user_msv !== currentUserId)]
+    : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
   const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
 
@@ -799,9 +799,12 @@ function MatchDetailModal({ match, user, onClose }) {
              {/* Phần events có thể map từ detail.events nếu có */}
           </div>
           <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
+             <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
              <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
-                {predictors.map((p, i) => <div key={i} className="predict-item"><span>{maskName(p.name)}</span><span className="muted">{p.pick}</span></div>)}
+                {sortedPredictors.map((p, i) => {
+                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (toi)` : maskName(p.name);
+                  return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
+                })}
              </div>
              {stats.total > 0 && (
               <div className="predict-summary">
@@ -829,6 +832,11 @@ function MatchDetailModal({ match, user, onClose }) {
               >
                 {isClosed ? "Đã khóa" : hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán"}
               </button>
+              {hasPredicted && myPrediction && (
+                <div className="muted" style={{ marginTop: 6, textAlign: "center", fontWeight: 700 }}>
+                  Dự đoán của bạn: {myPrediction.pick}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -94,6 +94,7 @@ class PredictionStats(BaseModel):
 class PredictorInfo(BaseModel):
     name: str # Tên người dự đoán (đã che hoặc tên thật)
     pick: str # Ví dụ: "2-1"
+    user_msv: Optional[str] = None
 
 # Schema trả về đầy đủ thông tin khi click vào trận
 class MatchDetailResponse(MatchResponse):
