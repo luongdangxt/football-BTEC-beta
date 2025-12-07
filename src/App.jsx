@@ -2,6 +2,7 @@
 import { jwtDecode } from "jwt-decode"; // Cần cài: npm install jwt-decode
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
+import userAdminApi from "./api/userAdminApi";
 
 // --- DỮ LIỆU TĨNH CHO CÂY ĐẤU (BRACKET) ---
 const quarterGames = [
@@ -44,6 +45,7 @@ const transformMatchesToDays = (matches) => {
       // QUAN TRỌNG: Ưu tiên hiển thị chuỗi kickoff từ DB (VD: "05:00")
       // Nếu không có mới phải format từ start_time
       kickoff: match.kickoff || (match.start_time ? new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""),
+      minute: match.minute,
       
       // Giữ nguyên các thông tin khác
       date: dateKey, // Lưu lại dateKey để dùng cho form sửa
@@ -71,6 +73,7 @@ export default function App() {
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
   const [user, setUser] = React.useState(null);
+  const [users, setUsers] = React.useState([]);
 
   const isAdmin = user?.role === "admin";
 
@@ -87,6 +90,21 @@ export default function App() {
     };
     fetchMatches();
   }, []);
+
+  const loadUsers = React.useCallback(async () => {
+    try {
+      const list = await userAdminApi.getAll();
+      setUsers(list || []);
+    } catch (error) {
+      console.error("Failed to load users", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (view === "admin") {
+      loadUsers();
+    }
+  }, [view, loadUsers]);
 
   // 2. Kết nối WebSocket để nhận điểm số Realtime
   React.useEffect(() => {
@@ -306,6 +324,8 @@ export default function App() {
           <section className="section-block">
             <AdminPanel
               matchDays={matchDays}
+              users={users}
+              onRefreshUsers={loadUsers}
               onUpdateDay={handleUpdateDay}
               onAddMatch={handleAddMatch}
               onUpdateMatch={handleUpdateMatch}
@@ -320,7 +340,7 @@ export default function App() {
           onAuthSubmit={handleAuthSubmit} 
         />
         {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
-        {selectedMatch && <MatchDetailModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
+        {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
       </main>
     </div>
   );
@@ -462,96 +482,142 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
   );
 }
 
-function AdminPanel({ matchDays = [], onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
-  
-  // Hàm xử lý gọi API chung để không phải reload trang
+function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
+  // H?m x? l? g?i API chung ?? kh?ng ph?i reload trang
   const handleApiAction = async (promise, onSuccess) => {
     try {
       await promise;
-      // Gọi callback để App cha tự fetch lại dữ liệu mới nhất
       if (onSuccess) onSuccess();
     } catch (error) {
-      alert("Lỗi: " + (error.response?.data?.detail || error.message));
+      alert("L?i: " + (error.response?.data?.detail || error.message));
     }
   };
 
+  const [section, setSection] = React.useState("matches");
+
   return (
     <section className="admin-panel">
-      <div className="results-header"><div><p className="eyebrow">Trang admin</p><h2>Quản lý trận đấu</h2></div></div>
+      <div className="results-header">
+        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Qu?n l? tr?n ??u" : "Qu?n l? user"}</h2></div>
+        <div className="feed-tabs">
+          <button className={`feed-tab ${section === "matches" ? "is-active" : ""}`} onClick={() => setSection("matches")}>Tr?n ??u</button>
+          <button className={`feed-tab ${section === "users" ? "is-active" : ""}`} onClick={() => { setSection("users"); onRefreshUsers?.(); }}>User</button>
+        </div>
+      </div>
 
       <div className="admin-grid">
-        {/* --- FORM THÊM TRẬN --- */}
-        <div className="admin-card admin-card--wide">
-          <div className="admin-card__head"><h4>Thêm trận mới</h4></div>
-          <AdminMatchForm
-            submitLabel="Thêm trận"
-            onSubmit={(payload) => {
-              import('./api/adminApi').then(mod => {
-                 handleApiAction(
-                   mod.default.createMatch(payload),
-                   () => {
-                      alert("Đã thêm trận mới!");
-                      // Gọi onAddMatch với tham số rỗng để App tự reload toàn bộ
-                      onAddMatch?.(); 
-                   }
-                 );
-              });
-            }}
-          />
-        </div>
+        {section === "matches" ? (
+          <>
+            <div className="admin-card admin-card--wide">
+              <div className="admin-card__head"><h4>Th?m tr?n m?i</h4></div>
+              <AdminMatchForm
+                submitLabel="Th?m tr?n"
+                onSubmit={(payload) => {
+                  import('./api/adminApi').then(mod => {
+                     handleApiAction(
+                       mod.default.createMatch(payload),
+                       () => {
+                          alert("?? th?m tr?n m?i!");
+                          onAddMatch?.();
+                       }
+                     );
+                  });
+                }}
+              />
+            </div>
 
-        {/* --- DANH SÁCH TRẬN ĐẤU (Hiện tất cả các ngày) --- */}
-        {matchDays.length > 0 ? (
-          <div className="admin-match-list">
-             <div className="admin-card__head"><h3>Danh sách trận</h3></div>
-             
-             {matchDays.map((day) => (
-                <div key={day.id} style={{marginBottom: '20px'}}>
-                  <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
-                    {day.label}
-                  </h5>
-                  
-                  {(day.matches || []).map((match) => (
-                    <AdminMatchCard
-                      key={match.id}
-                      match={match}
-                      // SỰ KIỆN UPDATE
-                      onUpdate={(payload) => {
-                         import('./api/adminApi').then(mod => {
-                            handleApiAction(
-                              mod.default.updateMatch(match.id, payload),
-                              () => {
-                                 // Update xong gọi callback để load lại list
-                                 onUpdateMatch?.(day.id, match.id, payload);
-                              }
-                            );
-                         });
-                      }}
-                      // SỰ KIỆN DELETE
-                      onDelete={() => {
-                        if (!window.confirm(`Xóa trận ${match.home.name} vs ${match.away.name}?`)) return;
-                        
-                        import('./api/adminApi').then(mod => {
-                            handleApiAction(
-                              mod.default.deleteMatch(match.id),
-                              () => {
-                                 // Xóa xong gọi callback load lại list
-                                 onDeleteMatch?.(day.id, match.id);
-                              }
-                            );
-                        });
-                      }}
-                    />
-                  ))}
+            {matchDays.length > 0 ? (
+              <div className="admin-match-list">
+                 <div className="admin-card__head"><h3>Danh s?ch tr?n</h3></div>
+                 {matchDays.map((day) => (
+                    <div key={day.id} style={{marginBottom: '20px'}}>
+                      <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
+                        {day.label}
+                      </h5>
+                      {(day.matches || []).map((match) => (
+                        <AdminMatchCard
+                          key={match.id}
+                          match={match}
+                          onUpdate={(payload) => {
+                             import('./api/adminApi').then(mod => {
+                                handleApiAction(
+                                  mod.default.updateMatch(match.id, payload),
+                                  () => { onUpdateMatch?.(day.id, match.id, payload); }
+                                );
+                             });
+                          }}
+                          onDelete={() => {
+                            if (!window.confirm(`X?a tr?n ${match.home.name} vs ${match.away.name}?`)) return;
+                            import('./api/adminApi').then(mod => {
+                                handleApiAction(
+                                  mod.default.deleteMatch(match.id),
+                                  () => { onDeleteMatch?.(day.id, match.id); }
+                                );
+                            });
+                          }}
+                        />
+                      ))}
+                    </div>
+                 ))}
+              </div>
+            ) : <p className="muted">Ch?a c? tr?n ??u n?o.</p>}
+          </>
+        ) : (
+          <>
+            <div className="admin-card admin-card--wide">
+              <div className="admin-card__head">
+                <h4>Qu?n l? user</h4>
+                <button className="primary-btn ghost-btn" type="button" onClick={onRefreshUsers}>T?i l?i</button>
+              </div>
+              {users && users.length > 0 ? (
+                <div className="admin-user-grid">
+                  {users.map((u) => {
+                    const active = u.is_active !== false;
+                    return (
+                      <div key={u.id} className="admin-user-tile">
+                        <div className="admin-user-top">
+                          <div>
+                            <div className="admin-user-name">{u.full_name}</div>
+                            <div className="admin-user-meta">{u.msv} · {u.role}</div>
+                          </div>
+                          <span className={`user-status-pill ${active ? 'is-active' : 'is-locked'}`}>{active ? "Đang hoạt động" : "Đã khóa"}</span>
+                        </div>
+                        <div className="admin-user-actions">
+                          <button
+                            className="primary-btn ghost-btn"
+                            type="button"
+                            onClick={() => {
+                              const confirmed = window.confirm(`${active ? "Khóa" : "Mở khóa"} user ${u.full_name}?`);
+                              if (!confirmed) return;
+                              userAdminApi.lock(u.id, !active).then(onRefreshUsers).catch(err => alert(err.response?.data?.detail || err.message));
+                            }}
+                          >
+                            {active ? "Khóa" : "Mở khóa"}
+                          </button>
+                          <button
+                            className="primary-btn"
+                            type="button"
+                            onClick={() => {
+                              const confirmed = window.confirm(`Xóa user ${u.full_name}?`);
+                              if (!confirmed) return;
+                              userAdminApi.delete(u.id).then(onRefreshUsers).catch(err => alert(err.response?.data?.detail || err.message));
+                            }}
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-             ))}
-          </div>
-        ) : <p className="muted">Chưa có trận đấu nào.</p>}
+              ) : <p className="muted">Chưa có user.</p>}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
 }
-
 function AdminMatchCard({ match, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
@@ -717,9 +783,13 @@ function Connector({ className, mode }) {
 
 function MatchCard({ match, onSelect }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
+  const statusText = match.status === "live" ? "Dang dien ra" : match.status === "ft" ? "Ket thuc" : "Sap dien ra";
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
-      <div className="match-meta"><span className="competition">{match.competition}</span>{match.kickoff && <span className="kickoff">{match.kickoff}</span>}</div>
+      <div className="match-meta">
+        <span className="competition">{match.competition}</span>
+        <StatusPill status={match.status} label={statusText} />
+      </div>
       {match.status !== "ft" && <div className="match-status match-status--center"><StatusPill status={match.status} label={statusLabel} /></div>}
       <div className="match-main">
         <TeamCell team={match.home} />
@@ -746,7 +816,7 @@ function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
 }
 
-function MatchDetailModal({ match, onClose }) {
+function MatchDetailModal({ match, user, onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
@@ -768,7 +838,17 @@ function MatchDetailModal({ match, onClose }) {
   const displayMatch = detail || match; 
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
-  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "Ẩn danh";
+  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
+  const currentUserId = user?.studentId;
+  const myPrediction = currentUserId
+    ? predictors.find(p => p.user_msv === currentUserId)
+    : null;
+  const hasPredicted = Boolean(myPrediction);
+  const sortedPredictors = myPrediction
+    ? [myPrediction, ...predictors.filter(p => p.user_msv !== currentUserId)]
+    : predictors;
+  const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
+  const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
 
   return (
     <div className="match-detail-backdrop">
@@ -784,9 +864,12 @@ function MatchDetailModal({ match, onClose }) {
              {/* Phần events có thể map từ detail.events nếu có */}
           </div>
           <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
+             <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
              <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
-                {predictors.map((p, i) => <div key={i} className="predict-item"><span>{maskName(p.name)}</span><span className="muted">{p.pick}</span></div>)}
+                {sortedPredictors.map((p, i) => {
+                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (toi)` : maskName(p.name);
+                  return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
+                })}
              </div>
              {stats.total > 0 && (
               <div className="predict-summary">
@@ -806,7 +889,20 @@ function MatchDetailModal({ match, onClose }) {
                <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
                <div className="predict-team">{displayMatch.team_b}</div>
              </div>
-             <div className="predict-action"><button className="primary-btn predict-btn" onClick={handlePredict} disabled={displayMatch.is_locked}>{displayMatch.is_locked ? "Đã khóa" : "Gửi dự đoán"}</button></div>
+            <div className="predict-action">
+              <button
+                className="primary-btn predict-btn"
+                onClick={handlePredict}
+                disabled={isClosed || hasPredicted}
+              >
+                {isClosed ? "Đã khóa" : hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán"}
+              </button>
+              {hasPredicted && myPrediction && (
+                <div className="muted" style={{ marginTop: 6, textAlign: "center", fontWeight: 700 }}>
+                  Dự đoán của bạn: {myPrediction.pick}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
