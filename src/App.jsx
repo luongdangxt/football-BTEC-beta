@@ -1,5 +1,8 @@
 ﻿import React from "react";
+import { jwtDecode } from "jwt-decode"; // Cần cài: npm install jwt-decode
+import authApi from "./api/authApi";   // Import API module
 
+// --- DỮ LIỆU TĨNH (Sẽ thay bằng API trận đấu sau này) ---
 const quarterGames = [
   { id: "g1", label: "Bảng A", slots: ["Đội 1", "Đội 2", "Đội 3"] },
   { id: "g2", label: "Bảng B", slots: ["Đội 4", "Đội 5", "Đội 6"] },
@@ -150,6 +153,7 @@ const initialMatchDays = [
   },
 ];
 
+// --- APP MAIN COMPONENT ---
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
   const [view, setView] = React.useState("bracket");
@@ -159,6 +163,32 @@ export default function App() {
   const [user, setUser] = React.useState(null);
 
   const isAdmin = user?.role === "admin";
+
+  // Check login state khi load trang
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        // Kiểm tra token hết hạn chưa
+        if (decoded.exp * 1000 < Date.now()) {
+          localStorage.removeItem("token");
+          return;
+        }
+        setUser({
+          studentId: decoded.sub,
+          role: decoded.role,
+          fullName: decoded.sub, // Tạm thời hiển thị MSV
+        });
+        if (decoded.role === "admin") {
+          // Nếu đang ở trang khác, có thể tự động chuyển admin (tuỳ chọn)
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        localStorage.removeItem("token");
+      }
+    }
+  }, []);
 
   const handleSectionSelect = (sectionId) => {
     setSelectedSection(sectionId);
@@ -203,16 +233,61 @@ export default function App() {
     setSelectedMatch((prev) => (prev?.id === matchId ? null : prev));
   };
 
-  const handleLogin = (payload) => {
-    const nextUser = payload || null;
-    setUser(nextUser);
-    setShowAuth(false);
-    if (nextUser?.role === "admin") {
-      setView("admin");
+  // Hàm xử lý Authentication tập trung
+  const handleAuthSubmit = async (payload, mode) => {
+    try {
+      if (mode === "login") {
+        // --- LOGIN ---
+        // Gọi API login
+        const data = await authApi.login({
+          msv: payload.studentId,
+          password: payload.password
+        });
+        
+        // Lưu token
+        localStorage.setItem("token", data.access_token);
+        
+        // Decode token
+        const decoded = jwtDecode(data.access_token);
+        const userInfo = {
+          studentId: decoded.sub,
+          role: decoded.role,
+          fullName: decoded.sub, 
+        };
+
+        setUser(userInfo);
+        setShowAuth(false);
+        
+        // Chuyển view nếu là admin
+        if (decoded.role === "admin") {
+          setView("admin");
+        }
+        
+        alert(`Xin chào ${userInfo.studentId}, đăng nhập thành công!`);
+
+      } else {
+        // --- REGISTER ---
+        // Gọi API register
+        await authApi.register({
+          msv: payload.studentId,
+          full_name: payload.fullName,
+          phone: payload.phone,
+          password: payload.password
+        });
+        
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        return true; // Trả về true để AuthModal chuyển tab
+      }
+    } catch (error) {
+      console.error("Auth failed:", error);
+      const msg = error.response?.data?.detail || "Có lỗi xảy ra, vui lòng thử lại.";
+      alert("Lỗi: " + msg);
+      return false;
     }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     setUser(null);
     setSelectedMatch(null);
     setView("bracket");
@@ -314,7 +389,11 @@ export default function App() {
           </section>
         )}
 
-        <AuthModal open={showAuth} onClose={() => setShowAuth(false)} onLogin={handleLogin} />
+        <AuthModal 
+          open={showAuth} 
+          onClose={() => setShowAuth(false)} 
+          onAuthSubmit={handleAuthSubmit} 
+        />
         {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
         {selectedMatch && <MatchDetailModal match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
       </main>
@@ -322,7 +401,9 @@ export default function App() {
   );
 }
 
-function AuthModal({ open, onClose, onLogin }) {
+// --- SUB COMPONENTS ---
+
+function AuthModal({ open, onClose, onAuthSubmit }) {
   const [view, setView] = React.useState("login");
 
   React.useEffect(() => {
@@ -337,11 +418,20 @@ function AuthModal({ open, onClose, onLogin }) {
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
+  // Reset về login mỗi khi mở modal
   React.useEffect(() => {
     if (open) {
       setView("login");
     }
   }, [open]);
+
+  const handleFormSubmit = async (formData) => {
+    // Gọi hàm từ App, truyền thêm biến view để biết là đang login hay register
+    const success = await onAuthSubmit(formData, view);
+    if (success && view === "register") {
+      setView("login");
+    }
+  };
 
   if (!open) return null;
 
@@ -365,7 +455,7 @@ function AuthModal({ open, onClose, onLogin }) {
                 <h3>Đăng nhập</h3>
                 <p className="muted">Lưu bracket và đồng bộ dự đoán trên mọi thiết bị.</p>
               </div>
-              <AuthForm mode="login" onSubmit={onLogin} />
+              <AuthForm mode="login" onSubmit={handleFormSubmit} />
               <div className="auth-foot">
                 <span>
                   Chưa có tài khoản? {" "}
@@ -382,7 +472,7 @@ function AuthModal({ open, onClose, onLogin }) {
                 <h3>Đăng ký</h3>
                 <p className="muted">Theo dõi giải đấu, nhận nhắc lịch và chia sẻ đường dẫn dự đoán.</p>
               </div>
-              <AuthForm mode="register" onSubmit={onLogin} />
+              <AuthForm mode="register" onSubmit={handleFormSubmit} />
               <div className="auth-foot">
                 <span>
                   Đã có tài khoản? {" "}
@@ -406,10 +496,19 @@ function AuthForm({ mode, onSubmit }) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const studentId = (formData.get("studentId") || "").toString().trim();
-    const fullName = (formData.get("fullName") || "").toString().trim();
     const password = (formData.get("password") || "").toString().trim();
-    const role = studentId.toLowerCase() === "admin" || password === "admin" ? "admin" : "user";
-    onSubmit?.({ studentId, fullName, role });
+    
+    // Lấy thêm field nếu đăng ký
+    const fullName = !isLogin ? (formData.get("fullName") || "").toString().trim() : "";
+    const phone = !isLogin ? (formData.get("phone") || "").toString().trim() : "";
+
+    if (!studentId || !password) {
+      alert("Vui lòng nhập MSV và mật khẩu");
+      return;
+    }
+    
+    // Gửi lên AuthModal
+    onSubmit?.({ studentId, fullName, phone, password });
   };
 
   return (
@@ -422,6 +521,7 @@ function AuthForm({ mode, onSubmit }) {
           className="uppercase-input"
           placeholder="VD: BH01234"
           autoComplete="username"
+          required
           onChange={(e) => {
             e.target.value = e.target.value.toUpperCase();
           }}
@@ -432,12 +532,12 @@ function AuthForm({ mode, onSubmit }) {
         <>
           <label className="field">
             <span>Họ và tên</span>
-            <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" />
+            <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" required />
           </label>
 
           <label className="field">
             <span>Số điện thoại</span>
-            <input type="tel" name="phone" placeholder="09xx xxx xxx" autoComplete="tel" />
+            <input type="tel" name="phone" placeholder="09xx xxx xxx" autoComplete="tel" required />
           </label>
         </>
       )}
@@ -449,6 +549,7 @@ function AuthForm({ mode, onSubmit }) {
           name="password"
           placeholder="••••••••"
           autoComplete={isLogin ? "current-password" : "new-password"}
+          required
         />
       </label>
 
