@@ -1,8 +1,9 @@
 ﻿import React from "react";
 import { jwtDecode } from "jwt-decode"; // Cần cài: npm install jwt-decode
 import authApi from "./api/authApi";   // Import API module
+import matchApi from "./api/matchApi"; // Import Match API
 
-// --- DỮ LIỆU TĨNH (Sẽ thay bằng API trận đấu sau này) ---
+// --- DỮ LIỆU TĨNH CHO CÂY ĐẤU (BRACKET) ---
 const quarterGames = [
   { id: "g1", label: "Bảng A", slots: ["Đội 1", "Đội 2", "Đội 3"] },
   { id: "g2", label: "Bảng B", slots: ["Đội 4", "Đội 5", "Đội 6"] },
@@ -27,150 +28,121 @@ const sectionMatches = {
   g7: { label: "Chung kết" },
 };
 
-const initialMatchDays = [
-  {
-    id: "yesterday",
-    label: "Hôm qua, 18 Jan 2018",
-    matches: [
-      {
-        id: "chelsea-norwich",
-        competition: "FA Cup",
-        status: "ft",
-        home: { name: "Chelsea", score: 6, badge: "CFC", color: "#1746af" },
-        away: { name: "Norwich", score: 4, badge: "NOR", color: "#f2d039" },
-        note: "End",
-        homeEvents: [
-          { time: "12'", player: "Hazard" },
-          { time: "45+1'", player: "Giroud" },
-          { time: "68'", player: "M. Mount" },
-        ],
-        awayEvents: [
-          { time: "22'", player: "Pukki" },
-          { time: "76'", player: "Buendía" },
-        ],
-        predictions: [
-          { name: "Nguyễn Văn A", pick: "3-1" },
-          { name: "Trần Minh B", pick: "2-0" },
-          { name: "Lê Q. C", pick: "1-1" },
-        ],
-      },
-      {
-        id: "espanyol-barca",
-        competition: "Copa del Rey",
-        status: "ft",
-        home: { name: "Espanyol", score: 1, badge: "ESP", color: "#1f8adb" },
-        away: { name: "Barcelona", score: 0, badge: "BAR", color: "#d61f3b" },
-        note: "End",
-        homeEvents: [
-          { time: "34'", player: "Joselu" },
-        ],
-        awayEvents: [
-          { time: "57'", player: "Lewandowski (miss pen)" },
-        ],
-        predictions: [
-          { name: "Phạm T. D", pick: "0-2" },
-          { name: "Hoàng Khang", pick: "1-3" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "today",
-    label: "Hôm nay, 19 Jan 2018",
-    matches: [
-      {
-        id: "leganes-real",
-        competition: "Copa del Rey",
-        status: "live",
-        minute: "4'",
-        home: { name: "Leganés", score: 0, badge: "LEG", color: "#1f9dd6" },
-        away: { name: "Real Madrid", score: 0, badge: "RMA", color: "#ffffff" },
-        note: "Đang diễn ra",
-        homeEvents: [],
-        awayEvents: [],
-        predictions: [
-          { name: "Ngô Đức H", pick: "0-2" },
-          { name: "L. Thảo", pick: "1-1" },
-        ],
-      },
-      {
-        id: "brugge-dortmund",
-        competition: "Champions League",
-        status: "ft",
-        home: { name: "Club Brugge", score: 0, badge: "BRU", color: "#0d3b66" },
-        away: { name: "Dortmund", score: 3, badge: "BVB", color: "#f1d300" },
-        note: "Kết thúc",
-        homeEvents: [],
-        awayEvents: [
-          { time: "18'", player: "Bynoe-Gittens" },
-          { time: "60'", player: "Reus" },
-          { time: "86'", player: "Brandt" },
-        ],
-        predictions: [
-          { name: "Trịnh P. Nam", pick: "0-2" },
-          { name: "Vũ Minh H", pick: "1-2" },
-          { name: "L. My", pick: "0-1" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "tomorrow",
-    label: "Ngày mai, 20 Jan 2018",
-    matches: [
-      {
-        id: "hertha-dortmund",
-        competition: "Bundesliga R19",
-        status: "upcoming",
-        kickoff: "03:30",
-        home: { name: "Hertha BSC", badge: "BSC", color: "#0f69b4" },
-        away: { name: "Dortmund", badge: "BVB", color: "#f1d300" },
-        note: "Sắp bắt đầu",
-        homeEvents: [],
-        awayEvents: [],
-        predictions: [
-          { name: "Nguyễn Hồng P", pick: "0-2" },
-          { name: "Đ. Tuấn", pick: "1-3" },
-        ],
-      },
-      {
-        id: "psg-girona",
-        competition: "Champions League",
-        status: "upcoming",
-        kickoff: "03:00",
-        home: { name: "PSG", badge: "PSG", color: "#14274e" },
-        away: { name: "Girona", badge: "GIR", color: "#e63946" },
-        note: "Sắp diễn ra",
-        homeEvents: [],
-        awayEvents: [],
-        predictions: [
-          { name: "Phan L. T", pick: "2-1" },
-          { name: "Cao Ngọc M", pick: "3-0" },
-          { name: "T. Hải", pick: "1-0" },
-        ],
-      },
-    ],
-  },
-];
+const transformMatchesToDays = (matches) => {
+  if (!Array.isArray(matches)) return [];
+
+  const grouped = matches.reduce((acc, match) => {
+    // Ưu tiên lấy biến date dạng string từ DB, nếu không có mới cắt từ start_time
+    const dateKey = match.date || (match.start_time ? match.start_time.split("T")[0] : "unknown");
+    if (!acc[dateKey]) acc[dateKey] = [];
+    
+    acc[dateKey].push({
+      id: match.id,
+      competition: match.competition,
+      status: match.is_locked ? "ft" : (match.status || "upcoming"),
+      
+      // QUAN TRỌNG: Ưu tiên hiển thị chuỗi kickoff từ DB (VD: "05:00")
+      // Nếu không có mới phải format từ start_time
+      kickoff: match.kickoff || (match.start_time ? new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""),
+      
+      // Giữ nguyên các thông tin khác
+      date: dateKey, // Lưu lại dateKey để dùng cho form sửa
+      start_time: match.start_time,
+      home: { name: match.team_a, score: match.score_a, logo: match.team_a_logo, color: match.team_a_color },
+      away: { name: match.team_b, score: match.score_b, logo: match.team_b_logo, color: match.team_b_color },
+      predictions: match.predictions || [] 
+    });
+    return acc;
+  }, {});
+
+  return Object.keys(grouped).sort().map(dateKey => {
+     // ... (giữ nguyên logic format label ngày)
+     const dateObj = new Date(dateKey);
+     const label = dateObj.toLocaleDateString("vi-VN", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+     return { id: dateKey, label: label, matches: grouped[dateKey] };
+  });
+};
 
 // --- APP MAIN COMPONENT ---
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
   const [view, setView] = React.useState("bracket");
-  const [matchDays, setMatchDays] = React.useState(initialMatchDays);
+  const [matchDays, setMatchDays] = React.useState([]); // Bắt đầu với mảng rỗng
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
   const [user, setUser] = React.useState(null);
 
   const isAdmin = user?.role === "admin";
 
-  // Check login state khi load trang
+  // 1. Fetch dữ liệu trận đấu khi load trang
+  React.useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const matches = await matchApi.getAllMatches();
+        const uiData = transformMatchesToDays(matches);
+        setMatchDays(uiData);
+      } catch (error) {
+        console.error("Failed to load matches:", error);
+      }
+    };
+    fetchMatches();
+  }, []);
+
+  // 2. Kết nối WebSocket để nhận điểm số Realtime
+  React.useEffect(() => {
+    // Lưu ý: Port 8000 là port của FastAPI
+    const ws = new WebSocket("ws://localhost:8000/ws/live-scores");
+
+    ws.onopen = () => console.log("Connected to WebSocket Live Scores");
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === "SCORE_UPDATE") {
+          const { match_id, score_a, score_b } = msg.data;
+          
+          // Update state deep inside matchDays
+          setMatchDays(prevDays => prevDays.map(day => ({
+            ...day,
+            matches: day.matches.map(match => {
+              if (match.id === match_id) {
+                return {
+                  ...match,
+                  home: { ...match.home, score: score_a },
+                  away: { ...match.away, score: score_b },
+                  status: "live" // Tự động chuyển trạng thái sang live nếu có điểm
+                };
+              }
+              return match;
+            })
+          })));
+
+          // Nếu đang mở modal chi tiết trận đấu đó thì update luôn
+          setSelectedMatch(prev => {
+            if (prev && prev.id === match_id) {
+               return {
+                 ...prev,
+                 home: { ...prev.home, score: score_a },
+                 away: { ...prev.away, score: score_b }
+               };
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error("WS Error:", err);
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
+  // 3. Check login state
   React.useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        // Kiểm tra token hết hạn chưa
         if (decoded.exp * 1000 < Date.now()) {
           localStorage.removeItem("token");
           return;
@@ -178,11 +150,8 @@ export default function App() {
         setUser({
           studentId: decoded.sub,
           role: decoded.role,
-          fullName: decoded.sub, // Tạm thời hiển thị MSV
+          fullName: decoded.sub, 
         });
-        if (decoded.role === "admin") {
-          // Nếu đang ở trang khác, có thể tự động chuyển admin (tuỳ chọn)
-        }
       } catch (error) {
         console.error("Invalid token:", error);
         localStorage.removeItem("token");
@@ -195,59 +164,35 @@ export default function App() {
     setView("results");
   };
 
-  const handleAddDay = (day) => {
-    if (!day?.id || !day?.label) return;
-    setMatchDays((prev) => {
-      if (prev.some((d) => d.id === day.id)) return prev;
-      return [...prev, { ...day, matches: day.matches || [] }];
-    });
-  };
-
   const handleUpdateDay = (dayId, updates) => {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
+  // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
-    if (!dayId || !match) return;
-    const matchId = match.id || `${dayId}-${Date.now()}`;
-    setMatchDays((prev) =>
-      prev.map((day) => (day.id === dayId ? { ...day, matches: [...(day.matches || []), { ...match, id: matchId }] } : day))
-    );
+     // Nên reload lại toàn bộ list từ API để đảm bảo đúng sort
+     matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
-    setMatchDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? { ...day, matches: (day.matches || []).map((m) => (m.id === matchId ? { ...m, ...updates, id: matchId } : m)) }
-          : day
-      )
-    );
-    setSelectedMatch((prev) => (prev?.id === matchId ? { ...prev, ...updates, id: matchId } : prev));
+    // Gọi API lấy lại toàn bộ danh sách để đảm bảo sort đúng và giờ đúng
+    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
   };
 
   const handleDeleteMatch = (dayId, matchId) => {
     setMatchDays((prev) =>
       prev.map((day) => (day.id === dayId ? { ...day, matches: (day.matches || []).filter((m) => m.id !== matchId) } : day))
     );
-    setSelectedMatch((prev) => (prev?.id === matchId ? null : prev));
   };
 
-  // Hàm xử lý Authentication tập trung
   const handleAuthSubmit = async (payload, mode) => {
     try {
       if (mode === "login") {
-        // --- LOGIN ---
-        // Gọi API login
         const data = await authApi.login({
           msv: payload.studentId,
           password: payload.password
         });
-        
-        // Lưu token
         localStorage.setItem("token", data.access_token);
-        
-        // Decode token
         const decoded = jwtDecode(data.access_token);
         const userInfo = {
           studentId: decoded.sub,
@@ -257,26 +202,18 @@ export default function App() {
 
         setUser(userInfo);
         setShowAuth(false);
-        
-        // Chuyển view nếu là admin
-        if (decoded.role === "admin") {
-          setView("admin");
-        }
-        
+        if (decoded.role === "admin") setView("admin");
         alert(`Xin chào ${userInfo.studentId}, đăng nhập thành công!`);
 
       } else {
-        // --- REGISTER ---
-        // Gọi API register
         await authApi.register({
           msv: payload.studentId,
           full_name: payload.fullName,
           phone: payload.phone,
           password: payload.password
         });
-        
         alert("Đăng ký thành công! Vui lòng đăng nhập.");
-        return true; // Trả về true để AuthModal chuyển tab
+        return true; 
       }
     } catch (error) {
       console.error("Auth failed:", error);
@@ -292,18 +229,6 @@ export default function App() {
     setSelectedMatch(null);
     setView("bracket");
   };
-
-  React.useEffect(() => {
-    const openAuthHandler = () => setShowAuth(true);
-    window.addEventListener("openAuth", openAuthHandler);
-    return () => window.removeEventListener("openAuth", openAuthHandler);
-  }, []);
-
-  React.useEffect(() => {
-    if (view === "admin" && !isAdmin) {
-      setView("bracket");
-    }
-  }, [view, isAdmin]);
 
   const selectedLabel = selectedSection ? sectionMatches[selectedSection]?.label : null;
 
@@ -344,7 +269,7 @@ export default function App() {
           {user ? (
             <>
               <span className="muted">
-                Đang đăng nhập: <strong>{user.fullName || user.studentId || "Người dùng"}</strong>
+                Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
                 {isAdmin && " (Admin)"}
               </span>
               {isAdmin && view !== "admin" && (
@@ -407,30 +332,16 @@ function AuthModal({ open, onClose, onAuthSubmit }) {
   const [view, setView] = React.useState("login");
 
   React.useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "Escape") {
-        onClose?.();
-      }
-    };
-    if (open) {
-      window.addEventListener("keydown", handler);
-    }
+    const handler = (e) => { if (e.key === "Escape") onClose?.(); };
+    if (open) window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  // Reset về login mỗi khi mở modal
-  React.useEffect(() => {
-    if (open) {
-      setView("login");
-    }
-  }, [open]);
+  React.useEffect(() => { if (open) setView("login"); }, [open]);
 
   const handleFormSubmit = async (formData) => {
-    // Gọi hàm từ App, truyền thêm biến view để biết là đang login hay register
     const success = await onAuthSubmit(formData, view);
-    if (success && view === "register") {
-      setView("login");
-    }
+    if (success && view === "register") setView("login");
   };
 
   if (!open) return null;
@@ -439,48 +350,21 @@ function AuthModal({ open, onClose, onAuthSubmit }) {
     <div className="auth-modal-backdrop" role="dialog" aria-modal="true">
       <div className="auth-modal">
         <div className="auth-modal__head">
-          <div>
-            <p className="eyebrow">Football tournament</p>
-            <h2>{view === "login" ? "Đăng nhập" : "Đăng ký"}</h2>
-          </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Đóng">
-            ×
-          </button>
+          <div><p className="eyebrow">Football tournament</p><h2>{view === "login" ? "Đăng nhập" : "Đăng ký"}</h2></div>
+          <button className="icon-btn" onClick={onClose}>×</button>
         </div>
         <section className="auth auth--single">
           {view === "login" ? (
             <div className="auth-card">
-              <div className="auth-card__head">
-                <p className="eyebrow">Truy cập</p>
-                <h3>Đăng nhập</h3>
-                <p className="muted">Lưu bracket và đồng bộ dự đoán trên mọi thiết bị.</p>
-              </div>
+              <div className="auth-card__head"><p className="eyebrow">Truy cập</p><h3>Đăng nhập</h3></div>
               <AuthForm mode="login" onSubmit={handleFormSubmit} />
-              <div className="auth-foot">
-                <span>
-                  Chưa có tài khoản? {" "}
-                  <button type="button" className="link-button" onClick={() => setView("register")}>
-                    Đăng ký
-                  </button>
-                </span>
-              </div>
+              <div className="auth-foot"><span>Chưa có tài khoản? <button type="button" className="link-button" onClick={() => setView("register")}>Đăng ký</button></span></div>
             </div>
           ) : (
             <div className="auth-card auth-card--accent">
-              <div className="auth-card__head">
-                <p className="eyebrow">Tạo tài khoản</p>
-                <h3>Đăng ký</h3>
-                <p className="muted">Theo dõi giải đấu, nhận nhắc lịch và chia sẻ đường dẫn dự đoán.</p>
-              </div>
+              <div className="auth-card__head"><p className="eyebrow">Tạo tài khoản</p><h3>Đăng ký</h3></div>
               <AuthForm mode="register" onSubmit={handleFormSubmit} />
-              <div className="auth-foot">
-                <span>
-                  Đã có tài khoản? {" "}
-                  <button type="button" className="link-button" onClick={() => setView("login")}>
-                    Đăng nhập
-                  </button>
-                </span>
-              </div>
+              <div className="auth-foot"><span>Đã có tài khoản? <button type="button" className="link-button" onClick={() => setView("login")}>Đăng nhập</button></span></div>
             </div>
           )}
         </section>
@@ -491,23 +375,15 @@ function AuthModal({ open, onClose, onAuthSubmit }) {
 
 function AuthForm({ mode, onSubmit }) {
   const isLogin = mode === "login";
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const studentId = (formData.get("studentId") || "").toString().trim();
     const password = (formData.get("password") || "").toString().trim();
-    
-    // Lấy thêm field nếu đăng ký
     const fullName = !isLogin ? (formData.get("fullName") || "").toString().trim() : "";
     const phone = !isLogin ? (formData.get("phone") || "").toString().trim() : "";
 
-    if (!studentId || !password) {
-      alert("Vui lòng nhập MSV và mật khẩu");
-      return;
-    }
-    
-    // Gửi lên AuthModal
+    if (!studentId || !password) return alert("Vui lòng nhập MSV và mật khẩu");
     onSubmit?.({ studentId, fullName, phone, password });
   };
 
@@ -515,66 +391,16 @@ function AuthForm({ mode, onSubmit }) {
     <form className="auth-form" onSubmit={handleSubmit}>
       <label className="field">
         <span>MSV</span>
-        <input
-          type="text"
-          name="studentId"
-          className="uppercase-input"
-          placeholder="VD: BH01234"
-          autoComplete="username"
-          required
-          onChange={(e) => {
-            e.target.value = e.target.value.toUpperCase();
-          }}
-        />
+        <input type="text" name="studentId" className="uppercase-input" placeholder="VD: BH01234" required onChange={(e) => { e.target.value = e.target.value.toUpperCase(); }} />
       </label>
-
       {!isLogin && (
         <>
-          <label className="field">
-            <span>Họ và tên</span>
-            <input type="text" name="fullName" placeholder="Nguyễn Văn A" autoComplete="name" required />
-          </label>
-
-          <label className="field">
-            <span>Số điện thoại</span>
-            <input type="tel" name="phone" placeholder="09xx xxx xxx" autoComplete="tel" required />
-          </label>
+          <label className="field"><span>Họ và tên</span><input type="text" name="fullName" required /></label>
+          <label className="field"><span>Số điện thoại</span><input type="tel" name="phone" required /></label>
         </>
       )}
-
-      <label className="field">
-        <span>{isLogin ? "Mật khẩu" : "Tạo mật khẩu"}</span>
-        <input
-          type="password"
-          name="password"
-          placeholder="••••••••"
-          autoComplete={isLogin ? "current-password" : "new-password"}
-          required
-        />
-      </label>
-
-      {!isLogin && (
-        <label className="field">
-          <span>Nhập lại mật khẩu</span>
-          <input type="password" name="confirmPassword" placeholder="••••••••" autoComplete="new-password" />
-        </label>
-      )}
-
-      {isLogin && (
-        <div className="form-row">
-          <label className="checkbox">
-            <input type="checkbox" name="remember" defaultChecked />
-            <span>Ghi nhớ tài khoản</span>
-          </label>
-          <button type="button" className="link-button">
-            Quên mật khẩu?
-          </button>
-        </div>
-      )}
-
-      <button className="primary-btn" type="submit">
-        {isLogin ? "Đăng nhập" : "Tạo tài khoản"}
-      </button>
+      <label className="field"><span>{isLogin ? "Mật khẩu" : "Tạo mật khẩu"}</span><input type="password" name="password" required /></label>
+      <button className="primary-btn" type="submit">{isLogin ? "Đăng nhập" : "Tạo tài khoản"}</button>
     </form>
   );
 }
@@ -583,28 +409,23 @@ function BracketBoard({ onSectionSelect }) {
   return (
     <section className="board">
       <div className="board-viewport">
-        <div className="round-anchor round-anchor--qf" aria-hidden />
-        <div className="round-anchor round-anchor--semi" aria-hidden />
-        <div className="round-anchor round-anchor--final" aria-hidden />
-        <div className="round-anchor round-anchor--champ" aria-hidden />
-
+        <div className="round-anchor round-anchor--qf" />
+        <div className="round-anchor round-anchor--semi" />
+        <div className="round-anchor round-anchor--final" />
+        <div className="round-anchor round-anchor--champ" />
         <div className="board-grid">
           <GameCard game={quarterGames[0]} variant="quarter" extraClass="pos-q1" onClick={() => onSectionSelect("g1")} />
           <GameCard game={quarterGames[1]} variant="quarter" extraClass="pos-q2" onClick={() => onSectionSelect("g2")} />
           <GameCard game={quarterGames[2]} variant="quarter" extraClass="pos-q3" onClick={() => onSectionSelect("g3")} />
           <GameCard game={quarterGames[3]} variant="quarter" extraClass="pos-q4" onClick={() => onSectionSelect("g4")} />
-
           <GameCard game={semiGames[0]} variant="semi" extraClass="pos-s1" onClick={() => onSectionSelect("g5")} />
           <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" onClick={() => onSectionSelect("g6")} />
-
           <GameCard game={finalGame} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
           <ChampionCard extraClass="pos-champion" />
-
           <Connector className="connector connector-q12" mode="q" />
           <Connector className="connector connector-q34" mode="q" />
           <Connector className="connector connector-semis" mode="semi" />
           <Connector className="connector connector-final" mode="final" />
-
           <div className="round-label round-label--qf">Vòng bảng</div>
           <div className="round-label round-label--semi">Bán kết</div>
           <div className="round-label round-label--final">Chung kết</div>
@@ -619,21 +440,12 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
   return (
     <section className="results">
       <div className="results-header">
-        <div>
-          <p className="eyebrow">Trang kết quả</p>
-          <h2>Tất cả trận đấu</h2>
-          {selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}
-        </div>
+        <div><p className="eyebrow">Trang kết quả</p><h2>Tất cả trận đấu</h2>{selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}</div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" type="button" onClick={() => onBack()}>
-            Quay lại cây
-          </button>
-          <button className="primary-btn ghost-btn" type="button" onClick={() => onOpenAuth?.()}>
-            Đăng nhập
-          </button>
+          <button className="primary-btn ghost-btn" onClick={() => onBack()}>Quay lại cây</button>
+          <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>Đăng nhập</button>
         </div>
       </div>
-
       <div className="match-days">
         {matchDays.map((day) => (
           <article key={day.id} className="match-day">
@@ -651,103 +463,110 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
 }
 
 function AdminPanel({ matchDays = [], onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
-  const selectedDay = matchDays[0];
-  const [dayLabelDraft, setDayLabelDraft] = React.useState(selectedDay?.label || "");
-
-  React.useEffect(() => {
-    setDayLabelDraft(selectedDay?.label || "");
-  }, [selectedDay?.id, selectedDay?.label]);
+  
+  // Hàm xử lý gọi API chung để không phải reload trang
+  const handleApiAction = async (promise, onSuccess) => {
+    try {
+      await promise;
+      // Gọi callback để App cha tự fetch lại dữ liệu mới nhất
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      alert("Lỗi: " + (error.response?.data?.detail || error.message));
+    }
+  };
 
   return (
     <section className="admin-panel">
-      <div className="results-header">
-        <div>
-          <p className="eyebrow">Trang admin</p>
-          <h2>Quản lý trận đấu</h2>
+      <div className="results-header"><div><p className="eyebrow">Trang admin</p><h2>Quản lý trận đấu</h2></div></div>
+
+      <div className="admin-grid">
+        {/* --- FORM THÊM TRẬN --- */}
+        <div className="admin-card admin-card--wide">
+          <div className="admin-card__head"><h4>Thêm trận mới</h4></div>
+          <AdminMatchForm
+            submitLabel="Thêm trận"
+            onSubmit={(payload) => {
+              import('./api/adminApi').then(mod => {
+                 handleApiAction(
+                   mod.default.createMatch(payload),
+                   () => {
+                      alert("Đã thêm trận mới!");
+                      // Gọi onAddMatch với tham số rỗng để App tự reload toàn bộ
+                      onAddMatch?.(); 
+                   }
+                 );
+              });
+            }}
+          />
         </div>
-      </div>
 
-      {selectedDay ? (
-        <div className="admin-grid">
-          <div className="admin-card">
-            <div className="admin-card__head">
-              <div>
-                <p className="eyebrow">Nhãn</p>
-                <h3>{selectedDay.label}</h3>
-              </div>
-              <span className="muted">{(selectedDay.matches || []).length} trận</span>
-            </div>
-            <div className="admin-inline-form">
-              <label className="field">
-                <span>Đổi tên nhãn</span>
-                <input type="text" value={dayLabelDraft} onChange={(e) => setDayLabelDraft(e.target.value)} />
-              </label>
-              <button className="primary-btn ghost-btn" type="button" onClick={() => onUpdateDay?.(selectedDay.id, { label: dayLabelDraft })}>
-                Lưu nhãn
-              </button>
-            </div>
-          </div>
-
-          <div className="admin-card admin-card--wide">
-            <div className="admin-card__head">
-              <h4>Thêm trận mới</h4>
-            </div>
-            <AdminMatchForm
-              submitLabel="Thêm trận"
-              onSubmit={(payload) => {
-                onAddMatch?.(selectedDay.id, payload);
-              }}
-            />
-          </div>
-
+        {/* --- DANH SÁCH TRẬN ĐẤU (Hiện tất cả các ngày) --- */}
+        {matchDays.length > 0 ? (
           <div className="admin-match-list">
-            {(selectedDay.matches || []).map((match) => (
-              <AdminMatchCard
-                key={match.id}
-                match={match}
-                onUpdate={(payload) => onUpdateMatch?.(selectedDay.id, match.id, payload)}
-                onDelete={() => onDeleteMatch?.(selectedDay.id, match.id)}
-              />
-            ))}
-            {(selectedDay.matches || []).length === 0 && <p className="muted">Chưa có trận nào trong nhãn này.</p>}
+             <div className="admin-card__head"><h3>Danh sách trận</h3></div>
+             
+             {matchDays.map((day) => (
+                <div key={day.id} style={{marginBottom: '20px'}}>
+                  <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
+                    {day.label}
+                  </h5>
+                  
+                  {(day.matches || []).map((match) => (
+                    <AdminMatchCard
+                      key={match.id}
+                      match={match}
+                      // SỰ KIỆN UPDATE
+                      onUpdate={(payload) => {
+                         import('./api/adminApi').then(mod => {
+                            handleApiAction(
+                              mod.default.updateMatch(match.id, payload),
+                              () => {
+                                 // Update xong gọi callback để load lại list
+                                 onUpdateMatch?.(day.id, match.id, payload);
+                              }
+                            );
+                         });
+                      }}
+                      // SỰ KIỆN DELETE
+                      onDelete={() => {
+                        if (!window.confirm(`Xóa trận ${match.home.name} vs ${match.away.name}?`)) return;
+                        
+                        import('./api/adminApi').then(mod => {
+                            handleApiAction(
+                              mod.default.deleteMatch(match.id),
+                              () => {
+                                 // Xóa xong gọi callback load lại list
+                                 onDeleteMatch?.(day.id, match.id);
+                              }
+                            );
+                        });
+                      }}
+                    />
+                  ))}
+                </div>
+             ))}
           </div>
-        </div>
-      ) : (
-        <div className="admin-card">
-          <p className="muted">Thêm ngày mới để quản lý trận.</p>
-        </div>
-      )}
+        ) : <p className="muted">Chưa có trận đấu nào.</p>}
+      </div>
     </section>
   );
 }
 
 function AdminMatchCard({ match, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = React.useState(false);
-
-  const statusLabel =
-    match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : match.status === "upcoming" ? "Sắp diễn ra" : match.status;
+  const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
 
   return (
     <div className="admin-card admin-card--match">
       <div className="admin-card__head">
         <div>
           <p className="eyebrow">{match.competition}</p>
-          <strong>
-            {match.home?.name} vs {match.away?.name}
-          </strong>
-          <div className="muted">
-            <span>{statusLabel}</span>
-            {match.kickoff && <> • {match.kickoff}</>}
-            {match.minute && <> • {match.minute}</>}
-          </div>
+          <strong>{match.home?.name} vs {match.away?.name}</strong>
+          <div className="muted"><span>{statusLabel}</span> • {match.kickoff}</div>
         </div>
         <div className="admin-card__actions">
-          <button className="primary-btn ghost-btn" type="button" onClick={() => setIsEditing((v) => !v)}>
-            {isEditing ? "Huỷ" : "Sửa"}
-          </button>
-          <button className="primary-btn" type="button" onClick={onDelete}>
-            Xóa
-          </button>
+          <button className="primary-btn ghost-btn" onClick={() => setIsEditing((v) => !v)}>{isEditing ? "Huỷ" : "Sửa"}</button>
+          <button className="primary-btn" onClick={onDelete}>Xóa</button>
         </div>
       </div>
 
@@ -764,22 +583,17 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
         <div className="admin-match-summary">
           <div className="admin-team">
             <span className={`mini-badge ${match.home?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home?.logo ? "transparent" : match.home?.color || "#5bed9f" }}>
-              {match.home?.logo ? <img className="badge-img" src={match.home.logo} alt={`${match.home?.name} logo`} /> : (match.home?.badge || match.home?.name?.[0])}
+              {match.home?.logo ? <img className="badge-img" src={match.home.logo} alt="" /> : (match.home?.name?.[0])}
             </span>
             <span>{match.home?.name}</span>
           </div>
-          <div className="admin-score">
-            <span>{match.home?.score ?? "-"}</span>
-            <span className="dash">-</span>
-            <span>{match.away?.score ?? "-"}</span>
-          </div>
+          <div className="admin-score"><span>{match.home?.score ?? "-"}</span><span className="dash">-</span><span>{match.away?.score ?? "-"}</span></div>
           <div className="admin-team">
             <span className={`mini-badge ${match.away?.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away?.logo ? "transparent" : match.away?.color || "#e85c5c" }}>
-              {match.away?.logo ? <img className="badge-img" src={match.away.logo} alt={`${match.away?.name} logo`} /> : (match.away?.badge || match.away?.name?.[0])}
+              {match.away?.logo ? <img className="badge-img" src={match.away.logo} alt="" /> : (match.away?.name?.[0])}
             </span>
             <span>{match.away?.name}</span>
           </div>
-          {match.note && <span className="muted">{match.note}</span>}
         </div>
       )}
     </div>
@@ -788,194 +602,97 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
 
 function AdminMatchForm({ initialMatch, submitLabel = "Lưu", onSubmit }) {
   const emptyForm = {
-    competition: "",
-    status: "upcoming",
-    kickoff: "",
-    minute: "",
-    homeName: "",
-    homeLogo: "",
-    homeScore: "",
-    awayName: "",
-    awayLogo: "",
-    awayScore: "",
+    competition: "", status: "upcoming", date: "", kickoff: "", minute: "",
+    homeName: "", homeLogo: "", homeScore: "", awayName: "", awayLogo: "", awayScore: "",
   };
 
+  // Trong component AdminMatchForm
   const toFormState = (match) => ({
     competition: match?.competition || "",
     status: match?.status || "upcoming",
-    kickoff: match?.kickoff || "",
-    minute: match?.minute || "",
-    homeName: match?.home?.name || "",
-    homeLogo: match?.home?.logo || "",
-    homeScore: match?.home?.score ?? "",
-    awayName: match?.away?.name || "",
-    awayLogo: match?.away?.logo || "",
-    awayScore: match?.away?.score ?? "",
+    
+    // Lấy thẳng chuỗi từ match, không cần convert Date nữa
+    date: match?.date || "", 
+    kickoff: match?.kickoff || "", 
+    
+    homeName: match?.home?.name || "", homeLogo: match?.home?.logo || "", homeScore: match?.home?.score ?? "",
+    awayName: match?.away?.name || "", awayLogo: match?.away?.logo || "", awayScore: match?.away?.score ?? "",
   });
 
   const [form, setForm] = React.useState(toFormState(initialMatch) || emptyForm);
+  React.useEffect(() => { setForm(toFormState(initialMatch)); }, [initialMatch]);
 
-  React.useEffect(() => {
-    setForm(toFormState(initialMatch));
-  }, [initialMatch]);
-
-  const parseScore = (val) => {
-    if (val === "" || val === null || val === undefined) return undefined;
-    const num = Number(val);
-    return Number.isNaN(num) ? undefined : num;
+  const parseScore = (val) => (val === "" || val == null ? undefined : Number(val));
+  const bind = (field) => ({ value: form[field], onChange: (e) => setForm((prev) => ({ ...prev, [field]: e.target.value })) });
+  
+  const handleLogoChange = (field) => (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setForm((prev) => ({ ...prev, [field]: reader.result || "" }));
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const existingHomeColor = initialMatch?.home?.color;
-    const existingAwayColor = initialMatch?.away?.color;
     const payload = {
       id: initialMatch?.id,
       competition: form.competition || "Friendly",
-      status: form.status || "upcoming",
-      kickoff: form.kickoff || undefined,
-      minute: form.minute || undefined,
-      note: initialMatch?.note || "",
-      home: {
-        name: form.homeName || "Home",
-        badge: form.homeName ? form.homeName.slice(0, 3).toUpperCase() : "HOM",
-        color: existingHomeColor || "#5bed9f",
-        logo: form.homeLogo || undefined,
-        score: parseScore(form.homeScore),
-      },
-      away: {
-        name: form.awayName || "Away",
-        badge: form.awayName ? form.awayName.slice(0, 3).toUpperCase() : "AWY",
-        color: existingAwayColor || "#e85c5c",
-        logo: form.awayLogo || undefined,
-        score: parseScore(form.awayScore),
-      },
-      predictions: initialMatch?.predictions || [],
+      status: form.status,
+      date: form.date, // Gửi ngày
+      kickoff: form.kickoff, // Gửi giờ
+      home: { name: form.homeName, logo: form.homeLogo, score: parseScore(form.homeScore) },
+      away: { name: form.awayName, logo: form.awayLogo, score: parseScore(form.awayScore) },
     };
     onSubmit?.(payload);
-    if (!initialMatch) {
-      setForm(emptyForm);
-    }
-  };
-
-  const bind = (field) => ({
-    value: form[field],
-    onChange: (e) => setForm((prev) => ({ ...prev, [field]: e.target.value })),
-  });
-
-  const handleLogoChange = (field) => (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, [field]: reader.result || "" }));
-    };
-    reader.readAsDataURL(file);
+    if (!initialMatch) setForm(emptyForm);
   };
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
       <div className="admin-form-row">
-        <label className="field">
-          <span>Giải đấu</span>
-          <input type="text" placeholder="FA Cup" {...bind("competition")} />
-        </label>
+        <label className="field"><span>Giải đấu</span><input type="text" {...bind("competition")} /></label>
+        <label className="field"><span>Ngày thi đấu</span><input type="date" {...bind("date")} required /></label>
+        <label className="field"><span>Giờ (HH:mm)</span><input type="time" {...bind("kickoff")} required /></label>
         <label className="field">
           <span>Trạng thái</span>
           <select className="field-select" {...bind("status")}>
-            <option value="upcoming">Sắp diễn ra</option>
-            <option value="live">Đang diễn ra</option>
-            <option value="ft">Kết thúc</option>
+            <option value="upcoming">Sắp diễn ra</option><option value="live">Đang diễn ra</option><option value="ft">Kết thúc</option>
           </select>
-        </label>
-        <label className="field">
-          <span>Giờ bắt đầu</span>
-          <input type="text" placeholder="03:30" {...bind("kickoff")} />
-        </label>
-        <label className="field">
-          <span>Phút (nếu live)</span>
-          <input type="text" placeholder="45'" {...bind("minute")} />
         </label>
       </div>
 
       <div className="admin-form-row admin-form-row--teams">
         <div className="admin-team-col">
           <p className="eyebrow">Đội nhà</p>
-          <label className="field">
-            <span>Tên</span>
-            <input type="text" placeholder="Chelsea" {...bind("homeName")} />
-          </label>
+          <label className="field"><span>Tên</span><input type="text" {...bind("homeName")} /></label>
           <div className="logo-upload">
-            <label className="field">
-              <span>Logo đội</span>
-              <input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} />
-            </label>
-            {form.homeLogo && (
-              <div className="logo-preview">
-                <img src={form.homeLogo} alt="Logo đội nhà" />
-              </div>
-            )}
+            <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} /></label>
+            {form.homeLogo && <div className="logo-preview"><img src={form.homeLogo} alt="" /></div>}
           </div>
-          <label className="field">
-            <span>Tỷ số</span>
-            <input type="number" min="0" placeholder="0" {...bind("homeScore")} />
-          </label>
+          <label className="field"><span>Tỷ số</span><input type="number" {...bind("homeScore")} /></label>
         </div>
-
         <div className="admin-team-col">
           <p className="eyebrow">Đội khách</p>
-          <label className="field">
-            <span>Tên</span>
-            <input type="text" placeholder="Norwich" {...bind("awayName")} />
-          </label>
+          <label className="field"><span>Tên</span><input type="text" {...bind("awayName")} /></label>
           <div className="logo-upload">
-            <label className="field">
-              <span>Logo đội</span>
-              <input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} />
-            </label>
-            {form.awayLogo && (
-              <div className="logo-preview">
-                <img src={form.awayLogo} alt="Logo đội khách" />
-              </div>
-            )}
+            <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} /></label>
+            {form.awayLogo && <div className="logo-preview"><img src={form.awayLogo} alt="" /></div>}
           </div>
-          <label className="field">
-            <span>Tỷ số</span>
-            <input type="number" min="0" placeholder="0" {...bind("awayScore")} />
-          </label>
+          <label className="field"><span>Tỷ số</span><input type="number" {...bind("awayScore")} /></label>
         </div>
       </div>
-
-      <div className="admin-actions-row">
-        <button className="primary-btn" type="submit">
-          {submitLabel}
-        </button>
-      </div>
+      <div className="admin-actions-row"><button className="primary-btn" type="submit">{submitLabel}</button></div>
     </form>
   );
 }
 
 function GameCard({ game, variant, extraClass, onClick }) {
-  const clickable = typeof onClick === "function";
   return (
-    <div
-      className={`game-card game-card--${variant} ${extraClass || ""} ${clickable ? "game-card--link" : ""}`}
-      onClick={onClick}
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : -1}
-      onKeyDown={(e) => {
-        if (clickable && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-    >
+    <div className={`game-card game-card--${variant} ${extraClass || ""} ${onClick ? "game-card--link" : ""}`} onClick={onClick}>
       <div className="game-label">{game.label}</div>
-      {game.slots.map((slot, index) => (
-        <div key={`${game.id}-slot-${index}`} className="slot">
-          <span>{slot}</span>
-        </div>
-      ))}
+      {game.slots.map((slot, i) => <div key={i} className="slot"><span>{slot}</span></div>)}
     </div>
   );
 }
@@ -983,82 +700,30 @@ function GameCard({ game, variant, extraClass, onClick }) {
 function ChampionCard({ extraClass }) {
   return (
     <div className={`champion-card ${extraClass || ""}`}>
-      <div className="cup-icon">
-        <div className="cup-bowl" />
-        <div className="cup-base" />
-      </div>
-      <div className="champion-text">
-        <span className="eyebrow">Champion</span>
-        <strong>Waiting for winner</strong>
-      </div>
+      <div className="cup-icon"><div className="cup-bowl" /><div className="cup-base" /></div>
+      <div className="champion-text"><span className="eyebrow">Champion</span><strong>Waiting...</strong></div>
     </div>
   );
 }
 
 function Connector({ className, mode }) {
-  const isSemi = mode === "semi";
-  const isFinal = mode === "final";
+  // SVG path logic giữ nguyên
+  const isSemi = mode === "semi"; const isFinal = mode === "final";
   const viewBox = isSemi ? "0 0 140 400" : isFinal ? "0 0 120 220" : "0 0 140 200";
-  let path;
-
-  if (isSemi) {
-    path = "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200";
-  } else if (isFinal) {
-    path = "M0 110 C 30 110 60 110 120 110";
-  } else {
-    path = "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
-  }
-
-  return (
-    <div className={className}>
-      <svg viewBox={viewBox} preserveAspectRatio="none" className="connector-svg">
-        <path className="connector-path" d={path} />
-      </svg>
-    </div>
-  );
+  let path = isSemi ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200" :
+             isFinal ? "M0 110 C 30 110 60 110 120 110" : "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
+  return <div className={className}><svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none"><path className="connector-path" d={path} /></svg></div>;
 }
 
 function MatchCard({ match, onSelect }) {
-  const statusLabel =
-    match.status === "live"
-      ? `LIVE ${match.minute || ""}`.trim()
-      : match.status === "ft"
-      ? "End"
-      : match.kickoff
-      ? `Bắt đầu ${match.kickoff}`
-      : "Sắp diễn ra";
-
+  const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
   return (
-    <article
-      className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`}
-      onClick={onSelect}
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : -1}
-      onKeyDown={(e) => {
-        if (onSelect && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-    >
-      <div className="match-meta">
-        <span className="competition">{match.competition}</span>
-        {match.kickoff && <span className="kickoff">{match.kickoff}</span>}
-      </div>
-
-      {match.status !== "ft" && (
-        <div className="match-status match-status--center">
-          <StatusPill status={match.status} label={statusLabel} />
-        </div>
-      )}
-
+    <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
+      <div className="match-meta"><span className="competition">{match.competition}</span>{match.kickoff && <span className="kickoff">{match.kickoff}</span>}</div>
+      {match.status !== "ft" && <div className="match-status match-status--center"><StatusPill status={match.status} label={statusLabel} /></div>}
       <div className="match-main">
         <TeamCell team={match.home} />
-        <div className="scoreline">
-          <span className="score">{match.home.score ?? "-"}</span>
-          <span className="dash">-</span>
-          <span className="score">{match.away.score ?? "-"}</span>
-        </div>
+        <div className="scoreline"><span className="score">{match.home.score ?? "-"}</span><span className="dash">-</span><span className="score">{match.away.score ?? "-"}</span></div>
         <TeamCell team={match.away} align="right" />
       </div>
     </article>
@@ -1070,7 +735,7 @@ function TeamCell({ team, align = "left" }) {
   return (
     <div className={`team ${align === "right" ? "team--right" : ""}`}>
       <div className={`team-badge ${hasLogo ? "team-badge--logo" : ""}`} style={{ background: hasLogo ? "transparent" : team.color || "rgba(255,255,255,0.06)" }}>
-        {hasLogo ? <img className="badge-img" src={team.logo} alt={`${team.name} logo`} /> : <span>{team.badge || team.name.charAt(0)}</span>}
+        {hasLogo ? <img className="badge-img" src={team.logo} alt="" /> : <span>{team.name?.[0]}</span>}
       </div>
       <div className="team-name">{team.name}</div>
     </div>
@@ -1082,181 +747,66 @@ function StatusPill({ status, label }) {
 }
 
 function MatchDetailModal({ match, onClose }) {
-  const totalPred = (match.predictions || []).length;
-  const outcomeSummary = (match.predictions || []).reduce(
-    (acc, p) => {
-      if (!p.pick || !p.pick.includes("-")) return acc;
-      const [h, a] = p.pick.split("-").map((v) => parseInt(v.trim(), 10));
-      if (Number.isNaN(h) || Number.isNaN(a)) return acc;
-      if (h > a) acc.home += 1;
-      else if (h < a) acc.away += 1;
-      else acc.draw += 1;
-      return acc;
-    },
-    { home: 0, draw: 0, away: 0 }
-  );
-  const homeRaw = totalPred ? (outcomeSummary.home / totalPred) * 100 : 0;
-  const drawRaw = totalPred ? (outcomeSummary.draw / totalPred) * 100 : 0;
-  const awayRaw = totalPred ? (outcomeSummary.away / totalPred) * 100 : 0;
-  let homePct = Math.round(homeRaw);
-  let drawPct = Math.round(drawRaw);
-  let awayPct = Math.round(awayRaw);
-  const remainder = 100 - (homePct + drawPct + awayPct);
-  if (remainder !== 0) {
-    const maxVal = Math.max(homeRaw, drawRaw, awayRaw);
-    if (maxVal === homeRaw) homePct += remainder;
-    else if (maxVal === drawRaw) drawPct += remainder;
-    else awayPct += remainder;
-  }
+  const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
 
-  const maskName = (name) => {
-    if (!name) return "";
-    if (name.length <= 2) return name[0] + "*";
-    const first = name.slice(0, 2);
-    const last = name.slice(-1);
-    return `${first}${"*".repeat(Math.max(1, name.length - 3))}${last}`;
+  React.useEffect(() => {
+    if (match?.id) matchApi.getMatchDetail(match.id).then(setDetail).catch(console.error);
+  }, [match]);
+
+  const handlePredict = async () => {
+    if (!homePick || !awayPick) return alert("Vui lòng nhập tỷ số");
+    try {
+      await matchApi.predict({ match_id: match.id, score_a: parseInt(homePick), score_b: parseInt(awayPick) });
+      alert("Dự đoán thành công!");
+      const data = await matchApi.getMatchDetail(match.id);
+      setDetail(data);
+    } catch (error) { alert(error.response?.data?.detail || "Lỗi dự đoán"); }
   };
 
-  const renderEvents = (events) =>
-    events && events.length > 0 ? (
-      events.map((ev, idx) => (
-        <div key={`${ev.time}-${idx}`} className="event-item">
-          <span className="event-time">{ev.time}</span>
-          <span className="event-player">{ev.player}</span>
-        </div>
-      ))
-    ) : (
-      <span className="muted">Chưa có bàn thắng</span>
-    );
+  const displayMatch = detail || match; 
+  const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
+  const predictors = detail?.predictors || [];
+  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "Ẩn danh";
 
   return (
-    <div className="match-detail-backdrop" role="dialog" aria-modal="true">
+    <div className="match-detail-backdrop">
       <div className="match-detail">
-        <div className="match-detail__head">
-          <div>
-            <p className="eyebrow">{match.competition}</p>
-            <h3>
-              {match.home.name} vs {match.away.name}
-            </h3>
-          </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Đóng">
-            ×
-          </button>
-        </div>
-
+        <div className="match-detail__head"><div><p className="eyebrow">Chi tiết</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>×</button></div>
         <div className="match-detail__body">
           <div className="match-detail__teams">
-            <TeamCell team={match.home} />
-            <div className="scoreline scoreline--lg">
-              <span className="score">{match.home.score ?? "-"}</span>
-              <span className="dash">-</span>
-              <span className="score">{match.away.score ?? "-"}</span>
-            </div>
-            <TeamCell team={match.away} align="right" />
-          </div>
-          <div className="match-detail__meta">
-            <StatusPill status={match.status} label={match.status === "live" ? `LIVE ${match.minute || ""}`.trim() : match.status === "ft" ? "Kết thúc" : match.kickoff ? `Bắt đầu ${match.kickoff}` : "Sắp diễn ra"} />
-            {match.note && <span className="status-note">{match.note}</span>}
+             <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
+             <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
+             <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
           </div>
           <div className="match-detail__events">
-            <div>
-              <p className="eyebrow">Đội nhà</p>
-              {renderEvents(match.homeEvents || [])}
-            </div>
-            <div>
-              <p className="eyebrow">Đội khách</p>
-              {renderEvents(match.awayEvents || [])}
-            </div>
+             {/* Phần events có thể map từ detail.events nếu có */}
           </div>
           <div className="predict-list">
-            <div className="predict-list__head">
-              <p className="eyebrow">Người dự đoán</p>
-              <span className="muted">{totalPred} người</span>
-            </div>
-            <div className="predict-list__body">
-              {(match.predictions || []).map((p, idx) => (
-                <div key={`${p.name}-${idx}`} className="predict-item">
-                  <span>{maskName(p.name)}</span>
-                  {p.pick && <span className="muted">{p.pick}</span>}
-                </div>
-              ))}
-              {(match.predictions || []).length === 0 && <span className="muted">Chưa có dự đoán</span>}
-            </div>
-            {totalPred > 0 && (
+             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
+             <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
+                {predictors.map((p, i) => <div key={i} className="predict-item"><span>{maskName(p.name)}</span><span className="muted">{p.pick}</span></div>)}
+             </div>
+             {stats.total > 0 && (
               <div className="predict-summary">
-                <p className="eyebrow">Tỷ lệ dự đoán</p>
                 <div className="predict-bar predict-bar--stack">
-                  <div className="predict-segment predict-segment--home" style={{ width: `${homePct}%` }}>
-                    {homePct > 8 && <span>{homePct}%</span>}
-                  </div>
-                  <div className="predict-segment predict-segment--draw" style={{ width: `${drawPct}%` }}>
-                    {drawPct > 8 && <span>{drawPct}%</span>}
-                  </div>
-                  <div className="predict-segment predict-segment--away" style={{ width: `${awayPct}%` }}>
-                    {awayPct > 8 && <span>{awayPct}%</span>}
-                  </div>
-                </div>
-                <div className="predict-summary__legend">
-                  <span className="legend-dot legend-dot--home" /> Chủ thắng ({homePct}%)
-                  <span className="legend-dot legend-dot--draw" /> Hòa ({drawPct}%)
-                  <span className="legend-dot legend-dot--away" /> Khách thắng ({awayPct}%)
+                  <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
+                  <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
+                  <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
                 </div>
               </div>
-            )}
+             )}
           </div>
           <div className="predict-input">
-            <p className="eyebrow">Dự đoán của bạn</p>
-            <div className="predict-input__row">
-              <div className="predict-team predict-team--left">
-                <span className={`mini-badge ${match.home.logo ? "mini-badge--logo" : ""}`} style={{ background: match.home.logo ? "transparent" : match.home.color || "#5bed9f" }}>
-                  {match.home.logo ? <img className="badge-img" src={match.home.logo} alt={`${match.home.name} logo`} /> : (match.home.badge || match.home.name[0])}
-                </span>
-                <span className="predict-team__name">{match.home.name}</span>
-              </div>
-              <input
-                className="predict-score"
-                type="number"
-                min="0"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={homePick}
-                onChange={(e) => setHomePick(e.target.value)}
-                aria-label="Tỷ số đội nhà"
-              />
-              <span className="predict-input__dash">-</span>
-              <input
-                className="predict-score"
-                type="number"
-                min="0"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={awayPick}
-                onChange={(e) => setAwayPick(e.target.value)}
-                aria-label="Tỷ số đội khách"
-              />
-              <div className="predict-team predict-team--right">
-                <span className={`mini-badge ${match.away.logo ? "mini-badge--logo" : ""}`} style={{ background: match.away.logo ? "transparent" : match.away.color || "#e85c5c" }}>
-                  {match.away.logo ? <img className="badge-img" src={match.away.logo} alt={`${match.away.name} logo`} /> : (match.away.badge || match.away.name[0])}
-                </span>
-                <span className="predict-team__name">{match.away.name}</span>
-              </div>
-            </div>
-          </div>
-          <div className="predict-action">
-            <button
-              className="primary-btn predict-btn"
-              type="button"
-              disabled={match.status === "ft"}
-              onClick={() => {
-                if (match.status === "ft") return;
-                window.alert("Bạn đã chọn Dự đoán tỷ số. (Placeholder hành động)");
-              }}
-            >
-              Dự đoán tỷ số
-            </button>
-            {match.status === "ft" && <span className="muted">Trận đã kết thúc - không nhận dự đoán.</span>}
+             <div className="predict-input__row">
+               <div className="predict-team">{displayMatch.team_a}</div>
+               <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
+               <span className="predict-input__dash">-</span>
+               <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
+               <div className="predict-team">{displayMatch.team_b}</div>
+             </div>
+             <div className="predict-action"><button className="primary-btn predict-btn" onClick={handlePredict} disabled={displayMatch.is_locked}>{displayMatch.is_locked ? "Đã khóa" : "Gửi dự đoán"}</button></div>
           </div>
         </div>
       </div>
@@ -1265,11 +815,5 @@ function MatchDetailModal({ match, onClose }) {
 }
 
 function BottomCta({ onClick }) {
-  return (
-    <div className="bottom-cta">
-      <button className="primary-btn bottom-cta__btn" type="button" onClick={onClick}>
-        Mở trang kết quả
-      </button>
-    </div>
-  );
+  return <div className="bottom-cta"><button className="primary-btn bottom-cta__btn" onClick={onClick}>Mở trang kết quả</button></div>;
 }
