@@ -25,7 +25,10 @@ async def create_match(
     current_user: dict = Depends(RoleChecker(["admin"]))
 ):
     new_match = match_in.dict()
-    new_match["is_locked"] = False
+    # Tinh trang mac dinh
+    new_match["status"] = match_in.status or "upcoming"
+    new_match["minute"] = match_in.minute
+    new_match["is_locked"] = True if new_match["status"] == "ft" else False
     
     # Tính toán start_time để dùng cho việc sắp xếp/khóa logic
     new_match["start_time"] = create_start_time(match_in.date, match_in.kickoff)
@@ -250,6 +253,11 @@ async def update_match_info(
         
         # Cập nhật start_time mới
         update_data["start_time"] = create_start_time(new_date, new_kickoff)
+
+    # Cap nhat trang thai -> tu dong lock neu FT, mo neu khac
+    if "status" in update_data:
+        update_data["is_locked"] = True if update_data["status"] == "ft" else False
+
 
     if not update_data:
         return {"message": "Không có gì thay đổi"}

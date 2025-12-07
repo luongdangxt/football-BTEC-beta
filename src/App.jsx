@@ -44,6 +44,7 @@ const transformMatchesToDays = (matches) => {
       // QUAN TRỌNG: Ưu tiên hiển thị chuỗi kickoff từ DB (VD: "05:00")
       // Nếu không có mới phải format từ start_time
       kickoff: match.kickoff || (match.start_time ? new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""),
+      minute: match.minute,
       
       // Giữ nguyên các thông tin khác
       date: dateKey, // Lưu lại dateKey để dùng cho form sửa
@@ -717,9 +718,13 @@ function Connector({ className, mode }) {
 
 function MatchCard({ match, onSelect }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
+  const statusText = match.status === "live" ? "Dang dien ra" : match.status === "ft" ? "Ket thuc" : "Sap dien ra";
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
-      <div className="match-meta"><span className="competition">{match.competition}</span>{match.kickoff && <span className="kickoff">{match.kickoff}</span>}</div>
+      <div className="match-meta">
+        <span className="competition">{match.competition}</span>
+        <StatusPill status={match.status} label={statusText} />
+      </div>
       {match.status !== "ft" && <div className="match-status match-status--center"><StatusPill status={match.status} label={statusLabel} /></div>}
       <div className="match-main">
         <TeamCell team={match.home} />

@@ -55,6 +55,8 @@ class MatchCreate(BaseModel):
     team_b: str
     team_b_logo: Optional[str] = None
     team_b_color: Optional[str] = "#e85c5c"
+    status: Optional[str] = "upcoming"
+    minute: Optional[str] = None
     # Lưu giờ dạng chuỗi để không bị lỗi múi giờ
     date: str     # Ví dụ: "2025-01-20"
     kickoff: str  # Ví dụ: "05:00"
@@ -66,6 +68,8 @@ class MatchInfoUpdate(BaseModel):
     team_b: Optional[str] = None
     date: Optional[str] = None    # <--- Thêm dòng này
     kickoff: Optional[str] = None # <--- Thêm dòng này
+    status: Optional[str] = None
+    minute: Optional[str] = None
     
 # Schema trả về cho Client hiển thị
 class MatchResponse(MatchCreate):

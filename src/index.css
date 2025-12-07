@@ -709,11 +709,37 @@ body {
   display: grid;
   gap: 8px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
 }
 
 .match-card--live {
-  border-color: rgba(91, 237, 159, 0.4);
-  box-shadow: 0 10px 30px rgba(91, 237, 159, 0.16);
+  border-color: rgba(91, 237, 159, 0.55);
+  box-shadow: 0 14px 40px rgba(91, 237, 159, 0.18);
+  background: radial-gradient(circle at 10% 10%, rgba(91, 237, 159, 0.14), transparent 36%),
+    radial-gradient(circle at 90% 10%, rgba(215, 245, 90, 0.08), transparent 30%),
+    rgba(0, 0, 0, 0.3);
+}
+
+.match-card--live::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(91, 237, 159, 0.3);
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(91, 237, 159, 0.18);
+}
+
+.match-card--ft {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.25));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.match-card--upcoming {
+  border-color: rgba(91, 237, 159, 0.25);
+  background: linear-gradient(145deg, rgba(91, 237, 159, 0.08), rgba(0, 0, 0, 0.2));
+  box-shadow: 0 10px 28px rgba(91, 237, 159, 0.1);
 }
 
 .match-meta {
