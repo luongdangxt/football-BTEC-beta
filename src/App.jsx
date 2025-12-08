@@ -1023,7 +1023,7 @@ function MatchDetailModal({ match, user, onClose }) {
   const eventFontSize = isNarrow ? "12px" : "14px";
   const eventsGridStyle = {
     display: "grid",
-    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 140 : 220}px, 1fr))`,
+    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 160 : 220}px, 1fr))`,
     columnGap: isNarrow ? 16 : 60,
     rowGap: isNarrow ? 8 : 0,
     justifyContent: "center",
@@ -1034,7 +1034,7 @@ function MatchDetailModal({ match, user, onClose }) {
     boxSizing: "border-box",
     margin: "12px auto"
   };
-  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: isNarrow ? "right" : "right" };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: "right" };
   const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
 
   return (
@@ -1057,19 +1057,10 @@ function MatchDetailModal({ match, user, onClose }) {
                         <li
                           key={`a-${idx}`}
                           className="event-item"
-                          style={{ display: "grid", gridTemplateColumns: isNarrow ? `${minuteWidth}px 1fr` : `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                          style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
                         >
-                         {isNarrow ? (
-                           <>
-                             <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                             <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
-                           </>
-                         ) : (
-                           <>
-                             <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
-                             <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                           </>
-                         )}
+                         <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
+                         <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
                        </li>
                      ))}
                    </ul>
@@ -1082,19 +1073,10 @@ function MatchDetailModal({ match, user, onClose }) {
                        <li
                          key={`b-${idx}`}
                          className="event-item"
-                         style={{ display: "grid", gridTemplateColumns: isNarrow ? `${minuteWidth}px 1fr` : `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                         style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
                        >
-                         {isNarrow ? (
-                           <>
-                             <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                             <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
-                           </>
-                         ) : (
-                           <>
-                             <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                             <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
-                           </>
-                         )}
+                         <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
+                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                        </li>
                      ))}
                    </ul>
