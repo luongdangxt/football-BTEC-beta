@@ -78,6 +78,7 @@ class MatchResponse(MatchCreate):
     score_a: Optional[int] = None
     score_b: Optional[int] = None
     start_time: Optional[datetime] = None # Vẫn giữ để sort nếu cần
+    events: List["MatchEvent"] = Field(default_factory=list)  # Kèm danh sách sự kiện/ghi bàn để client admin hiển thị
     
 class MatchEvent(BaseModel):
     minute: str       # Ví dụ: "12'", "45+1'"
@@ -98,9 +99,9 @@ class PredictorInfo(BaseModel):
 
 # Schema trả về đầy đủ thông tin khi click vào trận
 class MatchDetailResponse(MatchResponse):
-    events: List[MatchEvent] = []
+    events: List[MatchEvent] = Field(default_factory=list)
     stats: PredictionStats = PredictionStats()
-    predictors: List[PredictorInfo] = []
+    predictors: List[PredictorInfo] = Field(default_factory=list)
 
 # Schema để Admin thêm sự kiện (API phụ)
 class EventCreate(MatchEvent):

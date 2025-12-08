@@ -41,6 +41,7 @@ const transformMatchesToDays = (matches) => {
       id: match.id,
       competition: match.competition,
       status: match.is_locked ? "ft" : (match.status || "upcoming"),
+      events: match.events || [],
       
       // QUAN TRỌNG: Ưu tiên hiển thị chuỗi kickoff từ DB (VD: "05:00")
       // Nếu không có mới phải format từ start_time
@@ -186,15 +187,20 @@ export default function App() {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
+  // Helper reload toàn bộ danh sách trận từ API
+  const reloadMatches = React.useCallback(() => {
+    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+  }, []);
+
   // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
      // Nên reload lại toàn bộ list từ API để đảm bảo đúng sort
-     matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+     reloadMatches();
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
     // Gọi API lấy lại toàn bộ danh sách để đảm bảo sort đúng và giờ đúng
-    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+    reloadMatches();
   };
 
   const handleDeleteMatch = (dayId, matchId) => {
@@ -330,6 +336,7 @@ export default function App() {
               onAddMatch={handleAddMatch}
               onUpdateMatch={handleUpdateMatch}
               onDeleteMatch={handleDeleteMatch}
+              onReloadMatches={reloadMatches}
             />
           </section>
         )}
@@ -482,7 +489,7 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
   );
 }
 
-function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
+function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch, onReloadMatches }) {
   // H?m x? l? g?i API chung ?? kh?ng ph?i reload trang
   const handleApiAction = async (promise, onSuccess) => {
     try {
@@ -555,6 +562,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                                 );
                             });
                           }}
+                          onRefresh={onReloadMatches}
                         />
                       ))}
                     </div>
@@ -618,9 +626,32 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
     </section>
   );
 }
-function AdminMatchCard({ match, onUpdate, onDelete }) {
+function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
   const [isEditing, setIsEditing] = React.useState(false);
+  const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
+  const eventsA = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side !== "b") : [];
+  const eventsB = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side === "b") : [];
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    if (!eventForm.player || !eventForm.minute) {
+      alert("Nhập tên cầu thủ và phút ghi bàn");
+      return;
+    }
+    try {
+      await matchApi.addEvent(match.id, {
+        player: eventForm.player,
+        minute: eventForm.minute,
+        type: "goal",
+        team_side: eventForm.team_side,
+      });
+      setEventForm({ team_side: "a", player: "", minute: "" });
+      onRefresh?.();
+    } catch (err) {
+      alert(err.response?.data?.detail || err.message);
+    }
+  };
 
   return (
     <div className="admin-card admin-card--match">
@@ -662,6 +693,111 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
           </div>
         </div>
       )}
+
+          <div className="admin-events">
+        <div className="admin-card__head" style={{ padding: "10px 0" }}>
+          <h5>Ghi bàn / sự kiện</h5>
+        </div>
+        <div
+          className="admin-events-list"
+          style={{
+            margin: "8px auto 10px",
+            display: "flex",
+            gap: 60,
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            width: "100%",
+            padding: "0 24px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={{ flex: 1, textAlign: "left" }}>
+            {eventsA.length > 0 ? (
+              <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {eventsA.map((ev, idx) => (
+                  <li
+                    key={`a-${idx}`}
+                    className="event-item"
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "4px 0",
+                      flexWrap: "wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    <span className="eyebrow">{ev.minute || "?"}</span>
+                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="muted">-</p>}
+          </div>
+          <div style={{ flex: 1, textAlign: "right" }}>
+            {eventsB.length > 0 ? (
+              <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {eventsB.map((ev, idx) => (
+                  <li
+                    key={`b-${idx}`}
+                    className="event-item"
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "4px 0",
+                      flexWrap: "wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    <span className="eyebrow">{ev.minute || "?"}</span>
+                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="muted">-</p>}
+          </div>
+        </div>
+
+        <form className="admin-event-form" onSubmit={handleAddEvent}>
+          <div className="admin-form-row">
+            <label className="field">
+              <span>Đội</span>
+              <select
+                className="field-select"
+                value={eventForm.team_side}
+                onChange={(e) => setEventForm((p) => ({ ...p, team_side: e.target.value }))}
+              >
+                <option value="a">{match.home?.name || "Đội A"}</option>
+                <option value="b">{match.away?.name || "Đội B"}</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Cầu thủ</span>
+              <input
+                type="text"
+                value={eventForm.player}
+                onChange={(e) => setEventForm((p) => ({ ...p, player: e.target.value }))}
+                placeholder="Tên người ghi bàn"
+              />
+            </label>
+            <label className="field">
+              <span>Phút</span>
+              <input
+                type="text"
+                value={eventForm.minute}
+                onChange={(e) => setEventForm((p) => ({ ...p, minute: e.target.value }))}
+                placeholder="45'"
+              />
+            </label>
+            <div className="admin-actions-row" style={{ marginTop: 24 }}>
+              <button className="primary-btn" type="submit">Thêm</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -849,6 +985,8 @@ function MatchDetailModal({ match, user, onClose }) {
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
   const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
+  const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
+  const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
 
   return (
     <div className="match-detail-backdrop">
@@ -860,8 +998,42 @@ function MatchDetailModal({ match, user, onClose }) {
              <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
              <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
           </div>
-          <div className="match-detail__events">
-             {/* Phần events có thể map từ detail.events nếu có */}
+           <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <p className="eyebrow">Diễn biến</p>
+             <div style={{ display: "flex", gap: 60, justifyContent: "space-between", alignItems: "flex-start", width: "100%", padding: "0 24px", boxSizing: "border-box", margin: "8px 0" }}>
+               <div style={{ flex: 1, textAlign: "left" }}>
+                  {eventsA.length > 0 ? (
+                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {eventsA.map((ev, idx) => (
+                        <li
+                          key={`a-${idx}`}
+                          className="event-item"
+                          style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                        >
+                         <span className="eyebrow">{ev.minute || "?"}</span>
+                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 ) : <p className="muted">-</p>}
+               </div>
+               <div style={{ flex: 1, textAlign: "right" }}>
+                 {eventsB.length > 0 ? (
+                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {eventsB.map((ev, idx) => (
+                       <li
+                         key={`b-${idx}`}
+                         className="event-item"
+                         style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                       >
+                         <span className="eyebrow">{ev.minute || "?"}</span>
+                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 ) : <p className="muted">-</p>}
+               </div>
+             </div>
           </div>
           <div className="predict-list">
              <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
