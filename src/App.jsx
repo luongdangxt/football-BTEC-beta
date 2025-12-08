@@ -1,5 +1,5 @@
-import React from "react";
-import { jwtDecode } from "jwt-decode"; // C?n c‡i: npm install jwt-decode
+Ôªøimport React from "react";
+import { jwtDecode } from "jwt-decode"; // C?n c√†i: npm install jwt-decode
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
@@ -16,28 +16,28 @@ function useIsNarrow(maxWidth = 640) {
 }
 
 
-// --- D? LI?U TINH CHO C¬Y –?U (BRACKET) ---
+// --- D? LI?U TINH CHO C√ÇY √ê?U (BRACKET) ---
 const quarterGames = [
-  { id: "g1", label: "B?ng A", slots: ["–?i 1", "–?i 2", "–?i 3"] },
-  { id: "g2", label: "B?ng B", slots: ["–?i 4", "–?i 5", "–?i 6"] },
-  { id: "g3", label: "B?ng C", slots: ["–?i 7", "–?i 8", "–?i 9"] },
-  { id: "g4", label: "B?ng D", slots: ["–?i 10", "–?i 11", "–?i 12"] },
+  { id: "g1", label: "B?ng A", slots: ["√ê?i 1", "√ê?i 2", "√ê?i 3"] },
+  { id: "g2", label: "B?ng B", slots: ["√ê?i 4", "√ê?i 5", "√ê?i 6"] },
+  { id: "g3", label: "B?ng C", slots: ["√ê?i 7", "√ê?i 8", "√ê?i 9"] },
+  { id: "g4", label: "B?ng D", slots: ["√ê?i 10", "√ê?i 11", "√ê?i 12"] },
 ];
 
 const semiGames = [
-  { id: "g5", label: "B·n k?t 1", slots: ["Nh?t b?ng A", "Nh?t b?ng B"], connectorHeight: 94 },
-  { id: "g6", label: "B·n k?t 2", slots: ["Nh?t b?ng C", "Nh?t b?ng D"], connectorHeight: 94 },
+  { id: "g5", label: "B√°n k?t 1", slots: ["Nh?t b?ng A", "Nh?t b?ng B"], connectorHeight: 94 },
+  { id: "g6", label: "B√°n k?t 2", slots: ["Nh?t b?ng C", "Nh?t b?ng D"], connectorHeight: 94 },
 ];
 
-const finalGame = { id: "g7", label: "Chung k?t", slots: ["Th?ng b·n k?t 1", "Th?ng b·n k?t 2"], connectorHeight: 188 };
+const finalGame = { id: "g7", label: "Chung k?t", slots: ["Th?ng b√°n k?t 1", "Th?ng b√°n k?t 2"], connectorHeight: 188 };
 
 const sectionMatches = {
   g1: { label: "B?ng A" },
   g2: { label: "B?ng B" },
   g3: { label: "B?ng C" },
   g4: { label: "B?ng D" },
-  g5: { label: "B·n k?t 1" },
-  g6: { label: "B·n k?t 2" },
+  g5: { label: "B√°n k?t 1" },
+  g6: { label: "B√°n k?t 2" },
   g7: { label: "Chung k?t" },
 };
 
@@ -45,7 +45,7 @@ const transformMatchesToDays = (matches) => {
   if (!Array.isArray(matches)) return [];
 
   const grouped = matches.reduce((acc, match) => {
-    // Uu tiÍn l?y bi?n date d?ng string t? DB, n?u khÙng cÛ m?i c?t t? start_time
+    // Uu ti√™n l?y bi?n date d?ng string t? DB, n?u kh√¥ng c√≥ m?i c?t t? start_time
     const dateKey = match.date || (match.start_time ? match.start_time.split("T")[0] : "unknown");
     if (!acc[dateKey]) acc[dateKey] = [];
     
@@ -55,13 +55,13 @@ const transformMatchesToDays = (matches) => {
       status: match.is_locked ? "ft" : (match.status || "upcoming"),
       events: match.events || [],
       
-      // QUAN TR?NG: Uu tiÍn hi?n th? chu?i kickoff t? DB (VD: "05:00")
-      // N?u khÙng cÛ m?i ph?i format t? start_time
+      // QUAN TR?NG: Uu ti√™n hi?n th? chu?i kickoff t? DB (VD: "05:00")
+      // N?u kh√¥ng c√≥ m?i ph?i format t? start_time
       kickoff: match.kickoff || (match.start_time ? new Date(match.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""),
       minute: match.minute,
       
-      // Gi? nguyÍn c·c thÙng tin kh·c
-      date: dateKey, // Luu l?i dateKey d? d˘ng cho form s?a
+      // Gi? nguy√™n c√°c th√¥ng tin kh√°c
+      date: dateKey, // Luu l?i dateKey d? d√πng cho form s?a
       start_time: match.start_time,
       home: { name: match.team_a, score: match.score_a, logo: match.team_a_logo, color: match.team_a_color },
       away: { name: match.team_b, score: match.score_b, logo: match.team_b_logo, color: match.team_b_color },
@@ -71,7 +71,7 @@ const transformMatchesToDays = (matches) => {
   }, {});
 
   return Object.keys(grouped).sort().map(dateKey => {
-     // ... (gi? nguyÍn logic format label ng‡y)
+     // ... (gi? nguy√™n logic format label ng√†y)
      const dateObj = new Date(dateKey);
      const label = dateObj.toLocaleDateString("vi-VN", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
      return { id: dateKey, label: label, matches: grouped[dateKey] };
@@ -138,7 +138,7 @@ export default function App() {
 
   // 2. K?t n?i WebSocket d? nh?n di?m s? Realtime
   React.useEffect(() => {
-    // Luu ˝: Port 8000 l‡ port c?a FastAPI
+    // Luu √Ω: Port 8000 l√† port c?a FastAPI
     const ws = new WebSocket("wss://api-webbongda.onrender.com/ws/live-scores");
 
     ws.onopen = () => console.log("Connected to WebSocket Live Scores");
@@ -158,14 +158,14 @@ export default function App() {
                   ...match,
                   home: { ...match.home, score: score_a },
                   away: { ...match.away, score: score_b },
-                  status: "live" // T? d?ng chuy?n tr?ng th·i sang live n?u cÛ di?m
+                  status: "live" // T? d?ng chuy?n tr?ng th√°i sang live n?u c√≥ di?m
                 };
               }
               return match;
             })
           })));
 
-          // N?u dang m? modal chi ti?t tr?n d?u dÛ thÏ update luÙn
+          // N?u dang m? modal chi ti?t tr?n d?u d√≥ th√¨ update lu√¥n
           setSelectedMatch(prev => {
             if (prev && prev.id === match_id) {
                return {
@@ -216,17 +216,17 @@ export default function App() {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
-  // Helper reload to‡n b? danh s·ch tr?n t? API
+  // Helper reload to√†n b? danh s√°ch tr?n t? API
   const reloadMatches = React.useCallback(() => fetchMatchesWithEvents(), [fetchMatchesWithEvents]);
 
-  // Logic thÍm tr?n m?i (ch? update UI t?m th?i, th?c t? API d„ g?i xong m?i reload list)
+  // Logic th√™m tr?n m?i (ch? update UI t?m th?i, th?c t? API d√£ g?i xong m?i reload list)
   const handleAddMatch = (dayId, match) => {
-     // NÍn reload l?i to‡n b? list t? API d? d?m b?o d˙ng sort
+     // N√™n reload l?i to√†n b? list t? API d? d?m b?o d√∫ng sort
      reloadMatches();
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
-    // G?i API l?y l?i to‡n b? danh s·ch d? d?m b?o sort d˙ng v‡ gi? d˙ng
+    // G?i API l?y l?i to√†n b? danh s√°ch d? d?m b?o sort d√∫ng v√† gi? d√∫ng
     reloadMatches();
   };
 
@@ -254,7 +254,7 @@ export default function App() {
         setUser(userInfo);
         setShowAuth(false);
         if (decoded.role === "admin") setView("admin");
-        alert(`Xin ch‡o ${userInfo.studentId}, dang nh?p th‡nh cÙng!`);
+        alert(`Xin ch√†o ${userInfo.studentId}, dang nh?p th√†nh c√¥ng!`);
 
       } else {
         await authApi.register({
@@ -263,12 +263,12 @@ export default function App() {
           phone: payload.phone,
           password: payload.password
         });
-        alert("–ang k˝ th‡nh cÙng! Vui lÚng dang nh?p.");
+        alert("√êang k√Ω th√†nh c√¥ng! Vui l√≤ng dang nh?p.");
         return true; 
       }
     } catch (error) {
       console.error("Auth failed:", error);
-      const msg = error.response?.data?.detail || "CÛ l?i x?y ra, vui lÚng th? l?i.";
+      const msg = error.response?.data?.detail || "C√≥ l?i x?y ra, vui l√≤ng th? l?i.";
       alert("L?i: " + msg);
       return false;
     }
@@ -304,7 +304,7 @@ export default function App() {
 
         <div className="page-tabs">
           <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
-            C‚y d?u
+            C√¢y d?u
           </button>
           <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
             K?t qu?
@@ -320,21 +320,21 @@ export default function App() {
           {user ? (
             <>
               <span className="muted">
-                –ang dang nh?p: <strong>{user.fullName || user.studentId}</strong>
+                √êang dang nh?p: <strong>{user.fullName || user.studentId}</strong>
                 {isAdmin && " (Admin)"}
               </span>
               {isAdmin && view !== "admin" && (
                 <button className="primary-btn ghost-btn" type="button" onClick={() => setView("admin")}>
-                  V‡o trang Admin
+                  V√†o trang Admin
                 </button>
               )}
               <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
-                –ang xu?t
+                √êang xu?t
               </button>
             </>
           ) : (
             <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
-              –ang nh?p
+              √êang nh?p
             </button>
           )}
         </div>
@@ -404,21 +404,21 @@ function AuthModal({ open, onClose, onAuthSubmit }) {
     <div className="auth-modal-backdrop" role="dialog" aria-modal="true">
       <div className="auth-modal">
         <div className="auth-modal__head">
-          <div><p className="eyebrow">Football tournament</p><h2>{view === "login" ? "–ang nh?p" : "–ang k˝"}</h2></div>
-          <button className="icon-btn" onClick={onClose}>◊</button>
+          <div><p className="eyebrow">Football tournament</p><h2>{view === "login" ? "√êang nh?p" : "√êang k√Ω"}</h2></div>
+          <button className="icon-btn" onClick={onClose}>√ó</button>
         </div>
         <section className="auth auth--single">
           {view === "login" ? (
             <div className="auth-card">
-              <div className="auth-card__head"><p className="eyebrow">Truy c?p</p><h3>–ang nh?p</h3></div>
+              <div className="auth-card__head"><p className="eyebrow">Truy c?p</p><h3>√êang nh?p</h3></div>
               <AuthForm mode="login" onSubmit={handleFormSubmit} />
-              <div className="auth-foot"><span>Chua cÛ t‡i kho?n? <button type="button" className="link-button" onClick={() => setView("register")}>–ang k˝</button></span></div>
+              <div className="auth-foot"><span>Chua c√≥ t√†i kho?n? <button type="button" className="link-button" onClick={() => setView("register")}>√êang k√Ω</button></span></div>
             </div>
           ) : (
             <div className="auth-card auth-card--accent">
-              <div className="auth-card__head"><p className="eyebrow">T?o t‡i kho?n</p><h3>–ang k˝</h3></div>
+              <div className="auth-card__head"><p className="eyebrow">T?o t√†i kho?n</p><h3>√êang k√Ω</h3></div>
               <AuthForm mode="register" onSubmit={handleFormSubmit} />
-              <div className="auth-foot"><span>–„ cÛ t‡i kho?n? <button type="button" className="link-button" onClick={() => setView("login")}>–ang nh?p</button></span></div>
+              <div className="auth-foot"><span>√ê√£ c√≥ t√†i kho?n? <button type="button" className="link-button" onClick={() => setView("login")}>√êang nh?p</button></span></div>
             </div>
           )}
         </section>
@@ -437,7 +437,7 @@ function AuthForm({ mode, onSubmit }) {
     const fullName = !isLogin ? (formData.get("fullName") || "").toString().trim() : "";
     const phone = !isLogin ? (formData.get("phone") || "").toString().trim() : "";
 
-    if (!studentId || !password) return alert("Vui lÚng nh?p MSV v‡ m?t kh?u");
+    if (!studentId || !password) return alert("Vui l√≤ng nh?p MSV v√† m?t kh?u");
     onSubmit?.({ studentId, fullName, phone, password });
   };
 
@@ -449,12 +449,12 @@ function AuthForm({ mode, onSubmit }) {
       </label>
       {!isLogin && (
         <>
-          <label className="field"><span>H? v‡ tÍn</span><input type="text" name="fullName" required /></label>
+          <label className="field"><span>H? v√† t√™n</span><input type="text" name="fullName" required /></label>
           <label className="field"><span>S? di?n tho?i</span><input type="tel" name="phone" required /></label>
         </>
       )}
       <label className="field"><span>{isLogin ? "M?t kh?u" : "T?o m?t kh?u"}</span><input type="password" name="password" required /></label>
-      <button className="primary-btn" type="submit">{isLogin ? "–ang nh?p" : "T?o t‡i kho?n"}</button>
+      <button className="primary-btn" type="submit">{isLogin ? "√êang nh?p" : "T?o t√†i kho?n"}</button>
     </form>
   );
 }
@@ -480,10 +480,10 @@ function BracketBoard({ onSectionSelect }) {
           <Connector className="connector connector-q34" mode="q" />
           <Connector className="connector connector-semis" mode="semi" />
           <Connector className="connector connector-final" mode="final" />
-          <div className="round-label round-label--qf">VÚng b?ng</div>
-          <div className="round-label round-label--semi">B·n k?t</div>
+          <div className="round-label round-label--qf">V√≤ng b?ng</div>
+          <div className="round-label round-label--semi">B√°n k?t</div>
           <div className="round-label round-label--final">Chung k?t</div>
-          <div className="round-label round-label--champ">VÙ d?ch</div>
+          <div className="round-label round-label--champ">V√¥ d?ch</div>
         </div>
       </div>
     </section>
@@ -494,10 +494,10 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
   return (
     <section className="results">
       <div className="results-header">
-        <div><p className="eyebrow">Trang k?t qu?</p><h2>T?t c? tr?n d?u</h2>{selectedLabel && <p className="muted">–ang xem nh·nh: {selectedLabel}</p>}</div>
+        <div><p className="eyebrow">Trang k?t qu?</p><h2>T?t c? tr?n d?u</h2>{selectedLabel && <p className="muted">√êang xem nh√°nh: {selectedLabel}</p>}</div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" onClick={() => onBack()}>Quay l?i c‚y</button>
-          <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>–ang nh?p</button>
+          <button className="primary-btn ghost-btn" onClick={() => onBack()}>Quay l?i c√¢y</button>
+          <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>√êang nh?p</button>
         </div>
       </div>
       <div className="match-days">
@@ -528,30 +528,31 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   };
 
   const [section, setSection] = React.useState("matches");
+  const isNarrow = useIsNarrow(768);
 
   return (
-    <section className="admin-panel">
+    <section className="admin-panel" style={isNarrow ? { padding: "12px 10px 24px", maxWidth: "540px", width: "100%", margin: "0 auto", boxSizing: "border-box", overflowX: "hidden" } : {}}>
       <div className="results-header">
-        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Qu?n l˝ tr?n d?u" : "Qu?n l˝ user"}</h2></div>
+        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Qu?n l√Ω tr?n d?u" : "Qu?n l√Ω user"}</h2></div>
         <div className="feed-tabs">
           <button className={`feed-tab ${section === "matches" ? "is-active" : ""}`} onClick={() => setSection("matches")}>Tr?n d?u</button>
           <button className={`feed-tab ${section === "users" ? "is-active" : ""}`} onClick={() => { setSection("users"); onRefreshUsers?.(); }}>User</button>
         </div>
       </div>
 
-      <div className="admin-grid">
+      <div className="admin-grid" style={{ display: "flex", flexDirection: "column", gap: isNarrow ? 16 : 24, width: "100%", boxSizing: "border-box" }}>
         {section === "matches" ? (
           <>
-            <div className="admin-card admin-card--wide">
-              <div className="admin-card__head"><h4>ThÍm tr?n m?i</h4></div>
+            <div className="admin-card admin-card--wide" style={{ width: "100%", boxSizing: "border-box", minWidth: 0 }}>
+              <div className="admin-card__head"><h4>Th√™m tr?n m?i</h4></div>
               <AdminMatchForm
-                submitLabel="ThÍm tr?n"
+                submitLabel="Th√™m tr?n"
                 onSubmit={(payload) => {
                   import('./api/adminApi').then(mod => {
                      handleApiAction(
                        mod.default.createMatch(payload),
                        () => {
-                          alert("–„ thÍm tr?n m?i!");
+                          alert("√ê√£ th√™m tr?n m?i!");
                           onAddMatch?.();
                        }
                      );
@@ -561,10 +562,10 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
             </div>
 
             {matchDays.length > 0 ? (
-              <div className="admin-match-list">
-                 <div className="admin-card__head"><h3>Danh s·ch tr?n</h3></div>
+              <div className="admin-match-list" style={{ display: "flex", flexDirection: "column", gap: isNarrow ? 12 : 16 }}>
+                 <div className="admin-card__head"><h3>Danh s√°ch tr?n</h3></div>
                  {matchDays.map((day) => (
-                    <div key={day.id} style={{marginBottom: '20px'}}>
+                    <div key={day.id} style={{ marginBottom: isNarrow ? 12 : 20 }}>
                       <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
                         {day.label}
                       </h5>
@@ -581,7 +582,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                              });
                           }}
                           onDelete={() => {
-                            if (!window.confirm(`XÛa tr?n ${match.home.name} vs ${match.away.name}?`)) return;
+                            if (!window.confirm(`X√≥a tr?n ${match.home.name} vs ${match.away.name}?`)) return;
                             import('./api/adminApi').then(mod => {
                                 handleApiAction(
                                   mod.default.deleteMatch(match.id),
@@ -595,17 +596,17 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                     </div>
                  ))}
               </div>
-            ) : <p className="muted">Chua cÛ tr?n d?u n‡o.</p>}
+            ) : <p className="muted">Chua c√≥ tr?n d?u n√†o.</p>}
           </>
         ) : (
           <>
             <div className="admin-card admin-card--wide">
               <div className="admin-card__head">
-                <h4>Qu?n l˝ user</h4>
+                <h4>Qu?n l√Ω user</h4>
                 <button className="primary-btn ghost-btn" type="button" onClick={onRefreshUsers}>T?i l?i</button>
               </div>
               {users && users.length > 0 ? (
-                <div className="admin-user-grid">
+                <div className="admin-user-grid" style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "repeat(auto-fit, minmax(260px, 1fr))", gap: isNarrow ? 12 : 16 }}>
                   {users.map((u) => {
                     const active = u.is_active !== false;
                     return (
@@ -613,39 +614,39 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                         <div className="admin-user-top">
                           <div>
                             <div className="admin-user-name">{u.full_name}</div>
-                            <div className="admin-user-meta">{u.msv} ∑ {u.role}</div>
+                            <div className="admin-user-meta">{u.msv} ¬∑ {u.role}</div>
                           </div>
-                          <span className={`user-status-pill ${active ? 'is-active' : 'is-locked'}`}>{active ? "–ang ho?t d?ng" : "–„ khÛa"}</span>
+                          <span className={`user-status-pill ${active ? 'is-active' : 'is-locked'}`}>{active ? "√êang ho?t d?ng" : "√ê√£ kh√≥a"}</span>
                         </div>
                         <div className="admin-user-actions">
                           <button
                             className="primary-btn ghost-btn"
                             type="button"
                             onClick={() => {
-                              const confirmed = window.confirm(`${active ? "KhÛa" : "M? khÛa"} user ${u.full_name}?`);
+                              const confirmed = window.confirm(`${active ? "Kh√≥a" : "M? kh√≥a"} user ${u.full_name}?`);
                               if (!confirmed) return;
                               userAdminApi.lock(u.id, !active).then(onRefreshUsers).catch(err => alert(err.response?.data?.detail || err.message));
                             }}
                           >
-                            {active ? "KhÛa" : "M? khÛa"}
+                            {active ? "Kh√≥a" : "M? kh√≥a"}
                           </button>
                           <button
                             className="primary-btn"
                             type="button"
                             onClick={() => {
-                              const confirmed = window.confirm(`XÛa user ${u.full_name}?`);
+                              const confirmed = window.confirm(`X√≥a user ${u.full_name}?`);
                               if (!confirmed) return;
                               userAdminApi.delete(u.id).then(onRefreshUsers).catch(err => alert(err.response?.data?.detail || err.message));
                             }}
                           >
-                            XÛa
+                            X√≥a
                           </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ) : <p className="muted">Chua cÛ user.</p>}
+              ) : <p className="muted">Chua c√≥ user.</p>}
             </div>
           </>
         )}
@@ -654,16 +655,32 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   );
 }
 function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
+  const isNarrow = useIsNarrow(768);
   const [isEditing, setIsEditing] = React.useState(false);
   const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
-  const statusLabel = match.status === "live" ? "–ang di?n ra" : match.status === "ft" ? "K?t th˙c" : "S?p di?n ra";
+  const statusLabel = match.status === "live" ? "√êang di?n ra" : match.status === "ft" ? "K?t th√∫c" : "S?p di?n ra";
   const eventsA = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side === "b") : [];
+  const eventsGridStyle = {
+    margin: "12px auto 10px",
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "repeat(2, minmax(140px, 1fr))" : "repeat(2, minmax(260px, 340px))",
+    columnGap: isNarrow ? 12 : 120,
+    rowGap: isNarrow ? 8 : 0,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    width: "100%",
+    maxWidth: isNarrow ? "100%" : "1020px",
+    padding: isNarrow ? "0 8px" : "0 16px",
+    boxSizing: "border-box",
+  };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? "100%" : 320, justifySelf: isNarrow ? "center" : "end", textAlign: isNarrow ? "left" : "right" };
+  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? "100%" : 320, justifySelf: isNarrow ? "center" : "start", textAlign: "left" };
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
     if (!eventForm.player || !eventForm.minute) {
-      alert("Nh?p tÍn c?u th? v‡ ph˙t ghi b‡n");
+      alert("Nh?p t√™n c?u th? v√† ph√∫t ghi b√†n");
       return;
     }
     try {
@@ -681,16 +698,16 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
   };
 
   return (
-    <div className="admin-card admin-card--match">
+    <div className="admin-card admin-card--match" style={{ width: "100%", minWidth: 0, boxSizing: "border-box", padding: isNarrow ? "12px" : undefined, overflowX: "hidden" }}>
       <div className="admin-card__head">
         <div>
           <p className="eyebrow">{match.competition}</p>
           <strong>{match.home?.name} vs {match.away?.name}</strong>
-          <div className="muted"><span>{statusLabel}</span> ï {match.kickoff}</div>
+          <div className="muted"><span>{statusLabel}</span> ‚Ä¢ {match.kickoff}</div>
         </div>
         <div className="admin-card__actions">
           <button className="primary-btn ghost-btn" onClick={() => setIsEditing((v) => !v)}>{isEditing ? "Hu?" : "S?a"}</button>
-          <button className="primary-btn" onClick={onDelete}>XÛa</button>
+          <button className="primary-btn" onClick={onDelete}>X√≥a</button>
         </div>
       </div>
 
@@ -723,24 +740,13 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
 
           <div className="admin-events">
         <div className="admin-card__head" style={{ padding: "10px 0" }}>
-          <h5>Ghi b‡n / s? ki?n</h5>
+          <h5>Ghi b√†n / s? ki?n</h5>
         </div>
         <div
           className="admin-events-list"
-          style={{
-            margin: "12px auto 10px",
-            display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(260px, 340px))",
-            columnGap: 120,
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            width: "100%",
-            maxWidth: "1020px",
-            padding: "0 16px",
-            boxSizing: "border-box",
-          }}
+          style={eventsGridStyle}
         >
-          <div style={{ width: "100%", maxWidth: 320, justifySelf: "end", textAlign: "right" }}>
+          <div style={eventsColLeftStyle}>
             {eventsA.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsA.map((ev, idx) => (
@@ -763,7 +769,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
               </ul>
             ) : <p className="muted">-</p>}
           </div>
-          <div style={{ width: "100%", maxWidth: 320, justifySelf: "start", textAlign: "left" }}>
+          <div style={eventsColRightStyle}>
             {eventsB.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsB.map((ev, idx) => (
@@ -791,14 +797,14 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
         <form className="admin-event-form" onSubmit={handleAddEvent}>
           <div className="admin-form-row">
             <label className="field">
-              <span>–?i</span>
+              <span>√ê?i</span>
               <select
                 className="field-select"
                 value={eventForm.team_side}
                 onChange={(e) => setEventForm((p) => ({ ...p, team_side: e.target.value }))}
               >
-                <option value="a">{match.home?.name || "–?i A"}</option>
-                <option value="b">{match.away?.name || "–?i B"}</option>
+                <option value="a">{match.home?.name || "√ê?i A"}</option>
+                <option value="b">{match.away?.name || "√ê?i B"}</option>
               </select>
             </label>
             <label className="field">
@@ -807,11 +813,11 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                 type="text"
                 value={eventForm.player}
                 onChange={(e) => setEventForm((p) => ({ ...p, player: e.target.value }))}
-                placeholder="TÍn ngu?i ghi b‡n"
+                placeholder="T√™n ngu?i ghi b√†n"
               />
             </label>
             <label className="field">
-              <span>Ph˙t</span>
+              <span>Ph√∫t</span>
               <input
                 type="text"
                 value={eventForm.minute}
@@ -820,7 +826,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
               />
             </label>
             <div className="admin-actions-row" style={{ marginTop: 24 }}>
-              <button className="primary-btn" type="submit">ThÍm</button>
+              <button className="primary-btn" type="submit">Th√™m</button>
             </div>
           </div>
         </form>
@@ -834,13 +840,14 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
     competition: "", status: "upcoming", date: "", kickoff: "", minute: "",
     homeName: "", homeLogo: "", homeScore: "", awayName: "", awayLogo: "", awayScore: "",
   };
+  const isNarrow = useIsNarrow(768);
 
   // Trong component AdminMatchForm
   const toFormState = (match) => ({
     competition: match?.competition || "",
     status: match?.status || "upcoming",
     
-    // L?y th?ng chu?i t? match, khÙng c?n convert Date n?a
+    // L?y th?ng chu?i t? match, kh√¥ng c?n convert Date n?a
     date: match?.date || "", 
     kickoff: match?.kickoff || "", 
     
@@ -869,7 +876,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
       id: initialMatch?.id,
       competition: form.competition || "Friendly",
       status: form.status,
-      date: form.date, // G?i ng‡y
+      date: form.date, // G?i ng√†y
       kickoff: form.kickoff, // G?i gi?
       home: { name: form.homeName, logo: form.homeLogo, score: parseScore(form.homeScore) },
       away: { name: form.awayName, logo: form.awayLogo, score: parseScore(form.awayScore) },
@@ -878,24 +885,27 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
     if (!initialMatch) setForm(emptyForm);
   };
 
+  const rowStyle = { display: "flex", flexDirection: isNarrow ? "column" : "row", flexWrap: isNarrow ? "nowrap" : "wrap", gap: isNarrow ? 12 : 16 };
+  const teamsRowStyle = { display: "flex", flexDirection: isNarrow ? "column" : "row", gap: isNarrow ? 12 : 20 };
+
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
-      <div className="admin-form-row">
+      <div className="admin-form-row" style={rowStyle}>
         <label className="field"><span>Gi?i d?u</span><input type="text" {...bind("competition")} /></label>
-        <label className="field"><span>Ng‡y thi d?u</span><input type="date" {...bind("date")} required /></label>
+        <label className="field"><span>Ng√†y thi d?u</span><input type="date" {...bind("date")} required /></label>
         <label className="field"><span>Gi? (HH:mm)</span><input type="time" {...bind("kickoff")} required /></label>
         <label className="field">
-          <span>Tr?ng th·i</span>
+          <span>Tr?ng th√°i</span>
           <select className="field-select" {...bind("status")}>
-            <option value="upcoming">S?p di?n ra</option><option value="live">–ang di?n ra</option><option value="ft">K?t th˙c</option>
+            <option value="upcoming">S?p di?n ra</option><option value="live">√êang di?n ra</option><option value="ft">K?t th√∫c</option>
           </select>
         </label>
       </div>
 
-      <div className="admin-form-row admin-form-row--teams">
+      <div className="admin-form-row admin-form-row--teams" style={teamsRowStyle}>
         <div className="admin-team-col">
-          <p className="eyebrow">–?i nh‡</p>
-          <label className="field"><span>TÍn</span><input type="text" {...bind("homeName")} /></label>
+          <p className="eyebrow">√ê?i nh√†</p>
+          <label className="field"><span>T√™n</span><input type="text" {...bind("homeName")} /></label>
           <div className="logo-upload">
             <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} /></label>
             {form.homeLogo && <div className="logo-preview"><img src={form.homeLogo} alt="" /></div>}
@@ -903,8 +913,8 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
           <label className="field"><span>T? s?</span><input type="number" {...bind("homeScore")} /></label>
         </div>
         <div className="admin-team-col">
-          <p className="eyebrow">–?i kh·ch</p>
-          <label className="field"><span>TÍn</span><input type="text" {...bind("awayName")} /></label>
+          <p className="eyebrow">√ê?i kh√°ch</p>
+          <label className="field"><span>T√™n</span><input type="text" {...bind("awayName")} /></label>
           <div className="logo-upload">
             <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} /></label>
             {form.awayLogo && <div className="logo-preview"><img src={form.awayLogo} alt="" /></div>}
@@ -936,7 +946,7 @@ function ChampionCard({ extraClass }) {
 }
 
 function Connector({ className, mode }) {
-  // SVG path logic gi? nguyÍn
+  // SVG path logic gi? nguy√™n
   const isSemi = mode === "semi"; const isFinal = mode === "final";
   const viewBox = isSemi ? "0 0 140 400" : isFinal ? "0 0 120 220" : "0 0 140 200";
   let path = isSemi ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200" :
@@ -947,9 +957,9 @@ function Connector({ className, mode }) {
 function MatchCard({ match, onSelect }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
   
-  // S?a l?i ti?ng Vi?t cÛ d?u
-  const statusText = match.status === "live" ? "–ang di?n ra" 
-                   : match.status === "ft" ? "K?t th˙c" 
+  // S?a l?i ti?ng Vi?t c√≥ d?u
+  const statusText = match.status === "live" ? "√êang di?n ra" 
+                   : match.status === "ft" ? "K?t th√∫c" 
                    : "S?p di?n ra";
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
@@ -999,13 +1009,13 @@ function MatchDetailModal({ match, user, onClose }) {
   }, [match]);
 
   const handlePredict = async () => {
-    if (!homePick || !awayPick) return alert("Vui lÚng nh?p t? s?");
+    if (!homePick || !awayPick) return alert("Vui l√≤ng nh?p t? s?");
     try {
       await matchApi.predict({ match_id: match.id, score_a: parseInt(homePick), score_b: parseInt(awayPick) });
-      alert("D? do·n th‡nh cÙng!");
+      alert("D? do√°n th√†nh c√¥ng!");
       const data = await matchApi.getMatchDetail(match.id);
       setDetail(data);
-    } catch (error) { alert(error.response?.data?.detail || "L?i d? do·n"); }
+    } catch (error) { alert(error.response?.data?.detail || "L?i d? do√°n"); }
   };
 
   const displayMatch = detail || match; 
@@ -1045,7 +1055,7 @@ function MatchDetailModal({ match, user, onClose }) {
   return (
     <div className="match-detail-backdrop">
       <div className="match-detail" style={{ width: "min(900px, 94vw)", margin: "0 auto" }}>
-        <div className="match-detail__head"><div><p className="eyebrow">Chi ti?t</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>◊</button></div>
+        <div className="match-detail__head"><div><p className="eyebrow">Chi ti?t</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>√ó</button></div>
         <div className="match-detail__body">
           <div className="match-detail__teams">
              <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
@@ -1090,10 +1100,10 @@ function MatchDetailModal({ match, user, onClose }) {
              </div>
           </div>
           <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Ngu?i d? do·n ({stats.total})</p></div>
+             <div className="predict-list__head"><p className="eyebrow">Ngu?i d? do√°n ({stats.total})</p></div>
              <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
                 {sortedPredictors.map((p, i) => {
-                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tÙi)` : maskName(p.name);
+                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (t√¥i)` : maskName(p.name);
                   return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
                 })}
              </div>
@@ -1121,11 +1131,11 @@ function MatchDetailModal({ match, user, onClose }) {
                 onClick={handlePredict}
                 disabled={isClosed || hasPredicted}
               >
-                {isClosed ? "–„ khÛa" : hasPredicted ? "B?n d„ d? do·n" : "G?i d? do·n"}
+                {isClosed ? "√ê√£ kh√≥a" : hasPredicted ? "B?n d√£ d? do√°n" : "G?i d? do√°n"}
               </button>
               {hasPredicted && myPrediction && (
                 <div className="muted" style={{ marginTop: 6, textAlign: "center", fontWeight: 700 }}>
-                  D? do·n c?a b?n: {myPrediction.pick}
+                  D? do√°n c?a b?n: {myPrediction.pick}
                 </div>
               )}
             </div>
@@ -1139,6 +1149,7 @@ function MatchDetailModal({ match, user, onClose }) {
 function BottomCta({ onClick }) {
   return <div className="bottom-cta"><button className="primary-btn bottom-cta__btn" onClick={onClick}>M? trang k?t qu?</button></div>;
 }
+
 
 
 
