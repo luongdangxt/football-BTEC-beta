@@ -110,7 +110,7 @@ export default function App() {
   // 2. Kết nối WebSocket để nhận điểm số Realtime
   React.useEffect(() => {
     // Lưu ý: Port 8000 là port của FastAPI
-    const ws = new WebSocket("ws://localhost:8000/ws/live-scores");
+    const ws = new WebSocket("wss://api-webbongda.onrender.com/ws/live-scores");
 
     ws.onopen = () => console.log("Connected to WebSocket Live Scores");
 
