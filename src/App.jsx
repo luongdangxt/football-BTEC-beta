@@ -630,6 +630,8 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
+  const eventsA = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side !== "b") : [];
+  const eventsB = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side === "b") : [];
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
@@ -696,23 +698,43 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
         <div className="admin-card__head" style={{ padding: "10px 0" }}>
           <h5>Ghi bàn / sự kiện</h5>
         </div>
-        <div className="admin-events-list" style={{ marginBottom: 10 }}>
-          {match.events && match.events.length > 0 ? (
-            <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {match.events.map((ev, idx) => {
-                const teamName = ev.team_side === "a" ? match.home?.name : match.away?.name;
-                return (
-                  <li key={idx} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+        <div
+          className="admin-events-list"
+          style={{
+            margin: "0 auto 10px",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            columnGap: 300,
+            justifyItems: "stretch",
+            alignItems: "start",
+            width: "80%",
+            transform: "translateX(80px)", // nhẹ dịch sang phải cho cân với logo
+          }}
+        >
+          <div style={{ textAlign: "left", width: "100%" }}>
+            {eventsA.length > 0 ? (
+              <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {eventsA.map((ev, idx) => (
+                  <li key={`a-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
                     <span className="eyebrow">{ev.minute || "?"}</span>
                     <span>{ev.player || "?"}</span>
-                    <span className="muted">({teamName || "-"})</span>
                   </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="muted">Chưa có sự kiện.</p>
-          )}
+                ))}
+              </ul>
+            ) : <p className="muted">-</p>}
+          </div>
+          <div style={{ textAlign: "left", width: "100%" }}>
+            {eventsB.length > 0 ? (
+              <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {eventsB.map((ev, idx) => (
+                  <li key={`b-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                    <span className="eyebrow">{ev.minute || "?"}</span>
+                    <span>{ev.player || "?"}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="muted">-</p>}
+          </div>
         </div>
 
         <form className="admin-event-form" onSubmit={handleAddEvent}>
@@ -939,6 +961,8 @@ function MatchDetailModal({ match, user, onClose }) {
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
   const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
+  const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
+  const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
 
   return (
     <div className="match-detail-backdrop">
@@ -950,24 +974,34 @@ function MatchDetailModal({ match, user, onClose }) {
              <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
              <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
           </div>
-          <div className="match-detail__events">
+           <div className="match-detail__events">
              <p className="eyebrow">Diễn biến</p>
-             {displayMatch.events && displayMatch.events.length > 0 ? (
-               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                 {displayMatch.events.map((ev, idx) => {
-                   const teamName = ev.team_side === "b" ? (displayMatch.team_b || displayMatch.away?.name) : (displayMatch.team_a || displayMatch.home?.name);
-                   return (
-                     <li key={idx} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
-                       <span className="eyebrow">{ev.minute || "?"}</span>
-                       <span>{ev.player || "?"}</span>
-                       <span className="muted">({teamName || "-"})</span>
-                     </li>
-                   );
-                 })}
-               </ul>
-             ) : (
-               <p className="muted">Chưa có sự kiện.</p>
-             )}
+             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", columnGap: 60, justifyItems: "stretch", alignItems: "start", width: "80%", margin: "0 auto", transform: "translateX(20px)" }}>
+               <div style={{ textAlign: "left", width: "100%" }}>
+                  {eventsA.length > 0 ? (
+                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {eventsA.map((ev, idx) => (
+                        <li key={`a-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                         <span className="eyebrow">{ev.minute || "?"}</span>
+                         <span>{ev.player || "?"}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 ) : <p className="muted">-</p>}
+               </div>
+               <div style={{ textAlign: "left", width: "100%" }}>
+                 {eventsB.length > 0 ? (
+                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {eventsB.map((ev, idx) => (
+                        <li key={`b-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                         <span className="eyebrow">{ev.minute || "?"}</span>
+                         <span>{ev.player || "?"}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 ) : <p className="muted">-</p>}
+               </div>
+             </div>
           </div>
           <div className="predict-list">
              <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
