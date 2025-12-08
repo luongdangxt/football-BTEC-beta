@@ -496,7 +496,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
       await promise;
       if (onSuccess) onSuccess();
     } catch (error) {
-      alert("L?i: " + (error.response?.data?.detail || error.message));
+      alert("Lỗi: " + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -505,9 +505,9 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   return (
     <section className="admin-panel">
       <div className="results-header">
-        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Qu?n l? tr?n ??u" : "Qu?n l? user"}</h2></div>
+        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Quản lý trận đấu" : "Quản lý user"}</h2></div>
         <div className="feed-tabs">
-          <button className={`feed-tab ${section === "matches" ? "is-active" : ""}`} onClick={() => setSection("matches")}>Tr?n ??u</button>
+          <button className={`feed-tab ${section === "matches" ? "is-active" : ""}`} onClick={() => setSection("matches")}>Trận đấu</button>
           <button className={`feed-tab ${section === "users" ? "is-active" : ""}`} onClick={() => { setSection("users"); onRefreshUsers?.(); }}>User</button>
         </div>
       </div>
@@ -516,15 +516,15 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
         {section === "matches" ? (
           <>
             <div className="admin-card admin-card--wide">
-              <div className="admin-card__head"><h4>Th?m tr?n m?i</h4></div>
+              <div className="admin-card__head"><h4>Thêm trận mới</h4></div>
               <AdminMatchForm
-                submitLabel="Th?m tr?n"
+                submitLabel="Thêm trận"
                 onSubmit={(payload) => {
                   import('./api/adminApi').then(mod => {
                      handleApiAction(
                        mod.default.createMatch(payload),
                        () => {
-                          alert("?? th?m tr?n m?i!");
+                          alert("Đã thêm trận mới!");
                           onAddMatch?.();
                        }
                      );
@@ -535,7 +535,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
 
             {matchDays.length > 0 ? (
               <div className="admin-match-list">
-                 <div className="admin-card__head"><h3>Danh s?ch tr?n</h3></div>
+                 <div className="admin-card__head"><h3>Danh sách trận</h3></div>
                  {matchDays.map((day) => (
                     <div key={day.id} style={{marginBottom: '20px'}}>
                       <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
@@ -554,7 +554,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                              });
                           }}
                           onDelete={() => {
-                            if (!window.confirm(`X?a tr?n ${match.home.name} vs ${match.away.name}?`)) return;
+                            if (!window.confirm(`Xóa trận ${match.home.name} vs ${match.away.name}?`)) return;
                             import('./api/adminApi').then(mod => {
                                 handleApiAction(
                                   mod.default.deleteMatch(match.id),
@@ -568,14 +568,14 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                     </div>
                  ))}
               </div>
-            ) : <p className="muted">Ch?a c? tr?n ??u n?o.</p>}
+            ) : <p className="muted">Chưa có trận đấu nào.</p>}
           </>
         ) : (
           <>
             <div className="admin-card admin-card--wide">
               <div className="admin-card__head">
-                <h4>Qu?n l? user</h4>
-                <button className="primary-btn ghost-btn" type="button" onClick={onRefreshUsers}>T?i l?i</button>
+                <h4>Quản lý user</h4>
+                <button className="primary-btn ghost-btn" type="button" onClick={onRefreshUsers}>Tải lại</button>
               </div>
               {users && users.length > 0 ? (
                 <div className="admin-user-grid">
@@ -919,7 +919,11 @@ function Connector({ className, mode }) {
 
 function MatchCard({ match, onSelect }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
-  const statusText = match.status === "live" ? "Dang dien ra" : match.status === "ft" ? "Ket thuc" : "Sap dien ra";
+  
+  // Sửa lại tiếng Việt có dấu
+  const statusText = match.status === "live" ? "Đang diễn ra" 
+                   : match.status === "ft" ? "Kết thúc" 
+                   : "Sắp diễn ra";
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
       <div className="match-meta">
@@ -1036,10 +1040,10 @@ function MatchDetailModal({ match, user, onClose }) {
              </div>
           </div>
           <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
+             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
              <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
                 {sortedPredictors.map((p, i) => {
-                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (toi)` : maskName(p.name);
+                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tôi)` : maskName(p.name);
                   return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
                 })}
              </div>
