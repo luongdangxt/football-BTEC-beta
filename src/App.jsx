@@ -302,19 +302,19 @@ export default function App() {
           </div>
         </header>
 
-        <div className="page-tabs">
-          <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
-            Cây d?u
-          </button>
-          <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
-            K?t qu?
-          </button>
-          {isAdmin && (
+        {isAdmin && (
+          <div className="page-tabs">
+            <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
+              C?y d?u
+            </button>
+            <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
+              K?t qu?
+            </button>
             <button className={`page-tab ${view === "admin" ? "is-active" : ""}`} type="button" onClick={() => setView("admin")}>
               Admin
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="user-strip">
           {user ? (
