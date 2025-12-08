@@ -373,7 +373,6 @@ export default function App() {
           onClose={() => setShowAuth(false)} 
           onAuthSubmit={handleAuthSubmit} 
         />
-        {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
         {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
       </main>
     </div>
@@ -1146,9 +1145,6 @@ function MatchDetailModal({ match, user, onClose }) {
   );
 }
 
-function BottomCta({ onClick }) {
-  return <div className="bottom-cta"><button className="primary-btn bottom-cta__btn" onClick={onClick}>M? trang k?t qu?</button></div>;
-}
 
 
 
