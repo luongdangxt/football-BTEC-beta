@@ -316,7 +316,18 @@ export default function App() {
           </div>
         )}
 
-        <div className="user-strip">
+        <div
+          className="user-strip"
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+            width: "100%",
+            margin: "0 0 12px",
+          }}
+        >
           {user ? (
             <>
               <span className="muted">
@@ -1144,6 +1155,7 @@ function MatchDetailModal({ match, user, onClose }) {
     </div>
   );
 }
+
 
 
 
