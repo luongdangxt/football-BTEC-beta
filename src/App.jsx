@@ -1019,7 +1019,7 @@ function MatchDetailModal({ match, user, onClose }) {
           </div>
            <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <p className="eyebrow">Diễn biến</p>
-             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(260px, 340px))", columnGap: 120, justifyContent: "space-between", alignItems: "flex-start", width: "100%", maxWidth: "1020px", padding: "0 16px", boxSizing: "border-box", margin: "12px auto" }}>
+             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(220px, 1fr))", columnGap: 60, justifyContent: "center", alignItems: "flex-start", width: "100%", maxWidth: "840px", padding: "0 12px", boxSizing: "border-box", margin: "12px auto" }}>
                <div style={{ width: "100%", maxWidth: 320, justifySelf: "end", textAlign: "right" }}>
                   {eventsA.length > 0 ? (
                     <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
