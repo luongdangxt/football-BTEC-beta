@@ -694,42 +694,66 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
         </div>
       )}
 
-      <div className="admin-events">
+          <div className="admin-events">
         <div className="admin-card__head" style={{ padding: "10px 0" }}>
           <h5>Ghi bàn / sự kiện</h5>
         </div>
         <div
           className="admin-events-list"
           style={{
-            margin: "0 auto 10px",
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            columnGap: 300,
-            justifyItems: "stretch",
-            alignItems: "start",
-            width: "80%",
-            transform: "translateX(80px)", // nhẹ dịch sang phải cho cân với logo
+            margin: "8px auto 10px",
+            display: "flex",
+            gap: 60,
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            width: "100%",
+            padding: "0 24px",
+            boxSizing: "border-box",
           }}
         >
-          <div style={{ textAlign: "left", width: "100%" }}>
+          <div style={{ flex: 1, textAlign: "left" }}>
             {eventsA.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsA.map((ev, idx) => (
-                  <li key={`a-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                  <li
+                    key={`a-${idx}`}
+                    className="event-item"
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "4px 0",
+                      flexWrap: "wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
                     <span className="eyebrow">{ev.minute || "?"}</span>
-                    <span>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                   </li>
                 ))}
               </ul>
             ) : <p className="muted">-</p>}
           </div>
-          <div style={{ textAlign: "left", width: "100%" }}>
+          <div style={{ flex: 1, textAlign: "right" }}>
             {eventsB.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsB.map((ev, idx) => (
-                  <li key={`b-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                  <li
+                    key={`b-${idx}`}
+                    className="event-item"
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "4px 0",
+                      flexWrap: "wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
                     <span className="eyebrow">{ev.minute || "?"}</span>
-                    <span>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                   </li>
                 ))}
               </ul>
@@ -974,28 +998,36 @@ function MatchDetailModal({ match, user, onClose }) {
              <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
              <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
           </div>
-           <div className="match-detail__events">
-             <p className="eyebrow">Diễn biến</p>
-             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", columnGap: 60, justifyItems: "stretch", alignItems: "start", width: "80%", margin: "0 auto", transform: "translateX(20px)" }}>
-               <div style={{ textAlign: "left", width: "100%" }}>
+           <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <p className="eyebrow">Diễn biến</p>
+             <div style={{ display: "flex", gap: 60, justifyContent: "space-between", alignItems: "flex-start", width: "100%", padding: "0 24px", boxSizing: "border-box", margin: "8px 0" }}>
+               <div style={{ flex: 1, textAlign: "left" }}>
                   {eventsA.length > 0 ? (
-                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsA.map((ev, idx) => (
-                        <li key={`a-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                        <li
+                          key={`a-${idx}`}
+                          className="event-item"
+                          style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                        >
                          <span className="eyebrow">{ev.minute || "?"}</span>
-                         <span>{ev.player || "?"}</span>
+                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                        </li>
                      ))}
                    </ul>
                  ) : <p className="muted">-</p>}
                </div>
-               <div style={{ textAlign: "left", width: "100%" }}>
+               <div style={{ flex: 1, textAlign: "right" }}>
                  {eventsB.length > 0 ? (
                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsB.map((ev, idx) => (
-                        <li key={`b-${idx}`} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                       <li
+                         key={`b-${idx}`}
+                         className="event-item"
+                         style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                       >
                          <span className="eyebrow">{ev.minute || "?"}</span>
-                         <span>{ev.player || "?"}</span>
+                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                        </li>
                      ))}
                    </ul>
