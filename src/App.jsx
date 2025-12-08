@@ -895,8 +895,18 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
     if (!initialMatch) setForm(emptyForm);
   };
 
-  const rowStyle = { display: "flex", flexDirection: isNarrow ? "column" : "row", flexWrap: isNarrow ? "nowrap" : "wrap", gap: isNarrow ? 12 : 16 };
-  const teamsRowStyle = { display: "flex", flexDirection: isNarrow ? "column" : "row", gap: isNarrow ? 12 : 20 };
+  const rowStyle = {
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: isNarrow ? 12 : 16,
+    width: "100%",
+  };
+  const teamsRowStyle = {
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "repeat(2, minmax(260px, 1fr))",
+    gap: isNarrow ? 12 : 20,
+    width: "100%",
+  };
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
