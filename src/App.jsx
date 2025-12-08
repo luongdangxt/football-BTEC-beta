@@ -41,6 +41,7 @@ const transformMatchesToDays = (matches) => {
       id: match.id,
       competition: match.competition,
       status: match.is_locked ? "ft" : (match.status || "upcoming"),
+      events: match.events || [],
       
       // QUAN TRỌNG: Ưu tiên hiển thị chuỗi kickoff từ DB (VD: "05:00")
       // Nếu không có mới phải format từ start_time
@@ -186,15 +187,20 @@ export default function App() {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
+  // Helper reload toàn bộ danh sách trận từ API
+  const reloadMatches = React.useCallback(() => {
+    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+  }, []);
+
   // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
      // Nên reload lại toàn bộ list từ API để đảm bảo đúng sort
-     matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+     reloadMatches();
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
     // Gọi API lấy lại toàn bộ danh sách để đảm bảo sort đúng và giờ đúng
-    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
+    reloadMatches();
   };
 
   const handleDeleteMatch = (dayId, matchId) => {
@@ -330,6 +336,7 @@ export default function App() {
               onAddMatch={handleAddMatch}
               onUpdateMatch={handleUpdateMatch}
               onDeleteMatch={handleDeleteMatch}
+              onReloadMatches={reloadMatches}
             />
           </section>
         )}
@@ -482,7 +489,7 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
   );
 }
 
-function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch }) {
+function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch, onReloadMatches }) {
   // H?m x? l? g?i API chung ?? kh?ng ph?i reload trang
   const handleApiAction = async (promise, onSuccess) => {
     try {
@@ -555,6 +562,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                                 );
                             });
                           }}
+                          onRefresh={onReloadMatches}
                         />
                       ))}
                     </div>
@@ -618,9 +626,30 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
     </section>
   );
 }
-function AdminMatchCard({ match, onUpdate, onDelete }) {
+function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
   const [isEditing, setIsEditing] = React.useState(false);
+  const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    if (!eventForm.player || !eventForm.minute) {
+      alert("Nhập tên cầu thủ và phút ghi bàn");
+      return;
+    }
+    try {
+      await matchApi.addEvent(match.id, {
+        player: eventForm.player,
+        minute: eventForm.minute,
+        type: "goal",
+        team_side: eventForm.team_side,
+      });
+      setEventForm({ team_side: "a", player: "", minute: "" });
+      onRefresh?.();
+    } catch (err) {
+      alert(err.response?.data?.detail || err.message);
+    }
+  };
 
   return (
     <div className="admin-card admin-card--match">
@@ -662,6 +691,67 @@ function AdminMatchCard({ match, onUpdate, onDelete }) {
           </div>
         </div>
       )}
+
+      <div className="admin-events">
+        <div className="admin-card__head" style={{ padding: "10px 0" }}>
+          <h5>Ghi bàn / sự kiện</h5>
+        </div>
+        <div className="admin-events-list" style={{ marginBottom: 10 }}>
+          {match.events && match.events.length > 0 ? (
+            <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {match.events.map((ev, idx) => {
+                const teamName = ev.team_side === "a" ? match.home?.name : match.away?.name;
+                return (
+                  <li key={idx} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                    <span className="eyebrow">{ev.minute || "?"}</span>
+                    <span>{ev.player || "?"}</span>
+                    <span className="muted">({teamName || "-"})</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="muted">Chưa có sự kiện.</p>
+          )}
+        </div>
+
+        <form className="admin-event-form" onSubmit={handleAddEvent}>
+          <div className="admin-form-row">
+            <label className="field">
+              <span>Đội</span>
+              <select
+                className="field-select"
+                value={eventForm.team_side}
+                onChange={(e) => setEventForm((p) => ({ ...p, team_side: e.target.value }))}
+              >
+                <option value="a">{match.home?.name || "Đội A"}</option>
+                <option value="b">{match.away?.name || "Đội B"}</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Cầu thủ</span>
+              <input
+                type="text"
+                value={eventForm.player}
+                onChange={(e) => setEventForm((p) => ({ ...p, player: e.target.value }))}
+                placeholder="Tên người ghi bàn"
+              />
+            </label>
+            <label className="field">
+              <span>Phút</span>
+              <input
+                type="text"
+                value={eventForm.minute}
+                onChange={(e) => setEventForm((p) => ({ ...p, minute: e.target.value }))}
+                placeholder="45'"
+              />
+            </label>
+            <div className="admin-actions-row" style={{ marginTop: 24 }}>
+              <button className="primary-btn" type="submit">Thêm</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
