@@ -4,6 +4,18 @@ import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
 
+// Simple breakpoint hook for responsive tweaks
+function useIsNarrow(maxWidth = 640) {
+  const [isNarrow, setIsNarrow] = React.useState(() => (typeof window !== "undefined" ? window.innerWidth <= maxWidth : false));
+  React.useEffect(() => {
+    const handler = () => setIsNarrow(window.innerWidth <= maxWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [maxWidth]);
+  return isNarrow;
+}
+
+
 // --- DỮ LIỆU TĨNH CHO CÂY ĐẤU (BRACKET) ---
 const quarterGames = [
   { id: "g1", label: "Bảng A", slots: ["Đội 1", "Đội 2", "Đội 3"] },
@@ -78,19 +90,36 @@ export default function App() {
 
   const isAdmin = user?.role === "admin";
 
+  // Fetch match list and hydrate events from detail API so admin view stays in sync
+  const fetchMatchesWithEvents = React.useCallback(async () => {
+    try {
+      const matches = await matchApi.getAllMatches();
+      const matchesWithEvents = await Promise.all(
+        matches.map(async (match) => {
+          try {
+            const detail = await matchApi.getMatchDetail(match.id);
+            return {
+              ...match,
+              ...detail,
+              events: detail.events || [],
+              predictions: detail.predictors || match.predictions || [],
+            };
+          } catch (error) {
+            console.error("Failed to load match detail:", match.id, error);
+            return { ...match, events: [] };
+          }
+        })
+      );
+      setMatchDays(transformMatchesToDays(matchesWithEvents));
+    } catch (error) {
+      console.error("Failed to load matches:", error);
+    }
+  }, []);
+
   // 1. Fetch dữ liệu trận đấu khi load trang
   React.useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        const matches = await matchApi.getAllMatches();
-        const uiData = transformMatchesToDays(matches);
-        setMatchDays(uiData);
-      } catch (error) {
-        console.error("Failed to load matches:", error);
-      }
-    };
-    fetchMatches();
-  }, []);
+    fetchMatchesWithEvents();
+  }, [fetchMatchesWithEvents]);
 
   const loadUsers = React.useCallback(async () => {
     try {
@@ -188,9 +217,7 @@ export default function App() {
   };
 
   // Helper reload toàn bộ danh sách trận từ API
-  const reloadMatches = React.useCallback(() => {
-    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
-  }, []);
+  const reloadMatches = React.useCallback(() => fetchMatchesWithEvents(), [fetchMatchesWithEvents]);
 
   // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
@@ -199,7 +226,7 @@ export default function App() {
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
-    // Gọi API lấy lại toàn bộ danh sách để đảm bảo sort đúng và giờ đúng
+    // Gọi API lấy lại toàn bộ danh sách để đảm bảo sort đúng và giữ đúng
     reloadMatches();
   };
 
@@ -275,21 +302,32 @@ export default function App() {
           </div>
         </header>
 
-        <div className="page-tabs">
-          <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
-            Cây đấu
-          </button>
-          <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
-            Kết quả
-          </button>
-          {isAdmin && (
+        {isAdmin && (
+          <div className="page-tabs">
+            <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
+              Cây đấu
+            </button>
+            <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
+              Kết quả
+            </button>
             <button className={`page-tab ${view === "admin" ? "is-active" : ""}`} type="button" onClick={() => setView("admin")}>
               Admin
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="user-strip">
+        <div
+          className="user-strip"
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+            width: "100%",
+            margin: "0 0 12px",
+          }}
+        >
           {user ? (
             <>
               <span className="muted">
@@ -346,7 +384,6 @@ export default function App() {
           onClose={() => setShowAuth(false)} 
           onAuthSubmit={handleAuthSubmit} 
         />
-        {view === "bracket" && <BottomCta onClick={() => setView("results")} />}
         {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
       </main>
     </div>
@@ -490,7 +527,7 @@ function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onO
 }
 
 function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch, onReloadMatches }) {
-  // H?m x? l? g?i API chung ?? kh?ng ph?i reload trang
+  // Hàm xử lý gọi API chung để không phải reload trang
   const handleApiAction = async (promise, onSuccess) => {
     try {
       await promise;
@@ -501,9 +538,10 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   };
 
   const [section, setSection] = React.useState("matches");
+  const isNarrow = useIsNarrow(768);
 
   return (
-    <section className="admin-panel">
+    <section className="admin-panel" style={isNarrow ? { padding: "12px 10px 24px", maxWidth: "540px", width: "100%", margin: "0 auto", boxSizing: "border-box", overflowX: "hidden" } : {}}>
       <div className="results-header">
         <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Quản lý trận đấu" : "Quản lý user"}</h2></div>
         <div className="feed-tabs">
@@ -512,10 +550,10 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
         </div>
       </div>
 
-      <div className="admin-grid">
+      <div className="admin-grid" style={{ display: "flex", flexDirection: "column", gap: isNarrow ? 16 : 24, width: "100%", boxSizing: "border-box" }}>
         {section === "matches" ? (
           <>
-            <div className="admin-card admin-card--wide">
+            <div className="admin-card admin-card--wide" style={{ width: "100%", boxSizing: "border-box", minWidth: 0 }}>
               <div className="admin-card__head"><h4>Thêm trận mới</h4></div>
               <AdminMatchForm
                 submitLabel="Thêm trận"
@@ -534,10 +572,10 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
             </div>
 
             {matchDays.length > 0 ? (
-              <div className="admin-match-list">
+              <div className="admin-match-list" style={{ display: "flex", flexDirection: "column", gap: isNarrow ? 12 : 16 }}>
                  <div className="admin-card__head"><h3>Danh sách trận</h3></div>
                  {matchDays.map((day) => (
-                    <div key={day.id} style={{marginBottom: '20px'}}>
+                    <div key={day.id} style={{ marginBottom: isNarrow ? 12 : 20 }}>
                       <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
                         {day.label}
                       </h5>
@@ -578,7 +616,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                 <button className="primary-btn ghost-btn" type="button" onClick={onRefreshUsers}>Tải lại</button>
               </div>
               {users && users.length > 0 ? (
-                <div className="admin-user-grid">
+                <div className="admin-user-grid" style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "repeat(auto-fit, minmax(260px, 1fr))", gap: isNarrow ? 12 : 16 }}>
                   {users.map((u) => {
                     const active = u.is_active !== false;
                     return (
@@ -627,11 +665,27 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   );
 }
 function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
+  const isNarrow = useIsNarrow(768);
   const [isEditing, setIsEditing] = React.useState(false);
   const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
   const eventsA = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side === "b") : [];
+  const eventsGridStyle = {
+    margin: "12px auto 10px",
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "repeat(2, minmax(140px, 1fr))" : "repeat(2, minmax(260px, 340px))",
+    columnGap: isNarrow ? 12 : 120,
+    rowGap: isNarrow ? 8 : 0,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    width: "100%",
+    maxWidth: isNarrow ? "100%" : "1020px",
+    padding: isNarrow ? "0 8px" : "0 16px",
+    boxSizing: "border-box",
+  };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? "100%" : 320, justifySelf: isNarrow ? "center" : "end", textAlign: isNarrow ? "left" : "right" };
+  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? "100%" : 320, justifySelf: isNarrow ? "center" : "start", textAlign: "left" };
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
@@ -654,7 +708,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
   };
 
   return (
-    <div className="admin-card admin-card--match">
+    <div className="admin-card admin-card--match" style={{ width: "100%", minWidth: 0, boxSizing: "border-box", padding: isNarrow ? "12px" : undefined, overflowX: "hidden" }}>
       <div className="admin-card__head">
         <div>
           <p className="eyebrow">{match.competition}</p>
@@ -662,7 +716,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
           <div className="muted"><span>{statusLabel}</span> • {match.kickoff}</div>
         </div>
         <div className="admin-card__actions">
-          <button className="primary-btn ghost-btn" onClick={() => setIsEditing((v) => !v)}>{isEditing ? "Huỷ" : "Sửa"}</button>
+          <button className="primary-btn ghost-btn" onClick={() => setIsEditing((v) => !v)}>{isEditing ? "Hủy" : "Sửa"}</button>
           <button className="primary-btn" onClick={onDelete}>Xóa</button>
         </div>
       </div>
@@ -700,18 +754,9 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
         </div>
         <div
           className="admin-events-list"
-          style={{
-            margin: "8px auto 10px",
-            display: "flex",
-            gap: 60,
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            width: "100%",
-            padding: "0 24px",
-            boxSizing: "border-box",
-          }}
+          style={eventsGridStyle}
         >
-          <div style={{ flex: 1, textAlign: "left" }}>
+          <div style={eventsColLeftStyle}>
             {eventsA.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsA.map((ev, idx) => (
@@ -719,23 +764,22 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                     key={`a-${idx}`}
                     className="event-item"
                     style={{
-                      display: "flex",
-                      gap: 8,
+                      display: "grid",
+                      gridTemplateColumns: "1fr 44px",
+                      columnGap: 10,
                       alignItems: "center",
-                      justifyContent: "center",
                       padding: "4px 0",
-                      flexWrap: "wrap",
                       wordBreak: "break-word",
                     }}
                   >
-                    <span className="eyebrow">{ev.minute || "?"}</span>
-                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word", justifySelf: "end" }}>{ev.player || "?"}</span>
+                    <span className="eyebrow" style={{ justifySelf: "end" }}>{ev.minute || "?"}</span>
                   </li>
                 ))}
               </ul>
             ) : <p className="muted">-</p>}
           </div>
-          <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={eventsColRightStyle}>
             {eventsB.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsB.map((ev, idx) => (
@@ -743,12 +787,11 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                     key={`b-${idx}`}
                     className="event-item"
                     style={{
-                      display: "flex",
-                      gap: 8,
+                      display: "grid",
+                      gridTemplateColumns: "44px 1fr",
+                      columnGap: 10,
                       alignItems: "center",
-                      justifyContent: "center",
                       padding: "4px 0",
-                      flexWrap: "wrap",
                       wordBreak: "break-word",
                     }}
                   >
@@ -807,6 +850,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Lưu", onSubmit }) {
     competition: "", status: "upcoming", date: "", kickoff: "", minute: "",
     homeName: "", homeLogo: "", homeScore: "", awayName: "", awayLogo: "", awayScore: "",
   };
+  const isNarrow = useIsNarrow(768);
 
   // Trong component AdminMatchForm
   const toFormState = (match) => ({
@@ -851,9 +895,22 @@ function AdminMatchForm({ initialMatch, submitLabel = "Lưu", onSubmit }) {
     if (!initialMatch) setForm(emptyForm);
   };
 
+  const rowStyle = {
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: isNarrow ? 12 : 16,
+    width: "100%",
+  };
+  const teamsRowStyle = {
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "repeat(2, minmax(260px, 1fr))",
+    gap: isNarrow ? 12 : 20,
+    width: "100%",
+  };
+
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
-      <div className="admin-form-row">
+      <div className="admin-form-row" style={rowStyle}>
         <label className="field"><span>Giải đấu</span><input type="text" {...bind("competition")} /></label>
         <label className="field"><span>Ngày thi đấu</span><input type="date" {...bind("date")} required /></label>
         <label className="field"><span>Giờ (HH:mm)</span><input type="time" {...bind("kickoff")} required /></label>
@@ -865,7 +922,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Lưu", onSubmit }) {
         </label>
       </div>
 
-      <div className="admin-form-row admin-form-row--teams">
+      <div className="admin-form-row admin-form-row--teams" style={teamsRowStyle}>
         <div className="admin-team-col">
           <p className="eyebrow">Đội nhà</p>
           <label className="field"><span>Tên</span><input type="text" {...bind("homeName")} /></label>
@@ -960,6 +1017,12 @@ function MatchDetailModal({ match, user, onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
+  const isNarrow = useIsNarrow(640);
+  const detailStyle = {
+    width: isNarrow ? "92vw" : "min(900px, 94vw)",
+    margin: "0 auto",
+    padding: isNarrow ? "16px" : "24px",
+  };
 
   React.useEffect(() => {
     if (match?.id) matchApi.getMatchDetail(match.id).then(setDetail).catch(console.error);
@@ -991,10 +1054,27 @@ function MatchDetailModal({ match, user, onClose }) {
   const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
   const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
+  const minuteWidth = isNarrow ? 28 : 44;
+  const eventFontSize = isNarrow ? "12px" : "14px";
+  const eventsGridStyle = {
+    display: "grid",
+    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 140 : 220}px, 1fr))`,
+    columnGap: isNarrow ? 12 : 48,
+    rowGap: isNarrow ? 8 : 0,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    width: "100%",
+    maxWidth: isNarrow ? "100%" : "820px",
+    padding: isNarrow ? "0 4px" : "0 12px",
+    boxSizing: "border-box",
+    margin: "12px auto"
+  };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: "right" };
+  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
 
   return (
     <div className="match-detail-backdrop">
-      <div className="match-detail">
+      <div className="match-detail" style={{ width: "min(900px, 94vw)", margin: "0 auto" }}>
         <div className="match-detail__head"><div><p className="eyebrow">Chi tiết</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>×</button></div>
         <div className="match-detail__body">
           <div className="match-detail__teams">
@@ -1004,33 +1084,33 @@ function MatchDetailModal({ match, user, onClose }) {
           </div>
            <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <p className="eyebrow">Diễn biến</p>
-             <div style={{ display: "flex", gap: 60, justifyContent: "space-between", alignItems: "flex-start", width: "100%", padding: "0 24px", boxSizing: "border-box", margin: "8px 0" }}>
-               <div style={{ flex: 1, textAlign: "left" }}>
+             <div style={eventsGridStyle}>
+               <div style={eventsColLeftStyle}>
                   {eventsA.length > 0 ? (
                     <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsA.map((ev, idx) => (
                         <li
                           key={`a-${idx}`}
                           className="event-item"
-                          style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                          style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
                         >
-                         <span className="eyebrow">{ev.minute || "?"}</span>
-                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                         <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
+                         <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
                        </li>
                      ))}
                    </ul>
                  ) : <p className="muted">-</p>}
                </div>
-               <div style={{ flex: 1, textAlign: "right" }}>
+               <div style={eventsColRightStyle}>
                  {eventsB.length > 0 ? (
                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsB.map((ev, idx) => (
                        <li
                          key={`b-${idx}`}
                          className="event-item"
-                         style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                         style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
                        >
-                         <span className="eyebrow">{ev.minute || "?"}</span>
+                         <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
                          <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
                        </li>
                      ))}
@@ -1086,6 +1166,9 @@ function MatchDetailModal({ match, user, onClose }) {
   );
 }
 
-function BottomCta({ onClick }) {
-  return <div className="bottom-cta"><button className="primary-btn bottom-cta__btn" onClick={onClick}>Mở trang kết quả</button></div>;
-}
+
+
+
+
+
+
