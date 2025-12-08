@@ -719,16 +719,16 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
             margin: "12px auto 10px",
             display: "grid",
             gridTemplateColumns: "repeat(2, minmax(260px, 340px))",
-            columnGap: 80,
+            columnGap: 120,
             justifyContent: "space-between",
             alignItems: "flex-start",
             width: "100%",
-            maxWidth: "900px",
+            maxWidth: "1020px",
             padding: "0 16px",
             boxSizing: "border-box",
           }}
         >
-          <div style={{ width: "100%", maxWidth: 320, justifySelf: "center", textAlign: "left" }}>
+          <div style={{ width: "100%", maxWidth: 320, justifySelf: "end", textAlign: "right" }}>
             {eventsA.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsA.map((ev, idx) => (
@@ -737,21 +737,21 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                     className="event-item"
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "44px 1fr",
+                      gridTemplateColumns: "1fr 44px",
                       columnGap: 10,
                       alignItems: "center",
                       padding: "4px 0",
                       wordBreak: "break-word",
                     }}
                   >
-                    <span className="eyebrow">{ev.minute || "?"}</span>
-                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word", justifySelf: "end" }}>{ev.player || "?"}</span>
+                    <span className="eyebrow" style={{ justifySelf: "end" }}>{ev.minute || "?"}</span>
                   </li>
                 ))}
               </ul>
             ) : <p className="muted">-</p>}
           </div>
-          <div style={{ width: "100%", maxWidth: 320, justifySelf: "center", textAlign: "left" }}>
+          <div style={{ width: "100%", maxWidth: 320, justifySelf: "start", textAlign: "left" }}>
             {eventsB.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsB.map((ev, idx) => (
@@ -1019,24 +1019,24 @@ function MatchDetailModal({ match, user, onClose }) {
           </div>
            <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <p className="eyebrow">Diễn biến</p>
-             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(260px, 340px))", columnGap: 80, justifyContent: "space-between", alignItems: "flex-start", width: "100%", maxWidth: "900px", padding: "0 16px", boxSizing: "border-box", margin: "12px auto" }}>
-               <div style={{ width: "100%", maxWidth: 320, justifySelf: "center", textAlign: "left" }}>
+             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(260px, 340px))", columnGap: 120, justifyContent: "space-between", alignItems: "flex-start", width: "100%", maxWidth: "1020px", padding: "0 16px", boxSizing: "border-box", margin: "12px auto" }}>
+               <div style={{ width: "100%", maxWidth: 320, justifySelf: "end", textAlign: "right" }}>
                   {eventsA.length > 0 ? (
                     <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsA.map((ev, idx) => (
                         <li
                           key={`a-${idx}`}
                           className="event-item"
-                          style={{ display: "grid", gridTemplateColumns: "44px 1fr", columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word" }}
+                          style={{ display: "grid", gridTemplateColumns: "1fr 44px", columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word" }}
                         >
-                         <span className="eyebrow">{ev.minute || "?"}</span>
-                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                         <span style={{ wordBreak: "break-word", justifySelf: "end" }}>{ev.player || "?"}</span>
+                         <span className="eyebrow" style={{ justifySelf: "end" }}>{ev.minute || "?"}</span>
                        </li>
                      ))}
                    </ul>
                  ) : <p className="muted">-</p>}
                </div>
-               <div style={{ width: "100%", maxWidth: 320, justifySelf: "center", textAlign: "left" }}>
+               <div style={{ width: "100%", maxWidth: 320, justifySelf: "start", textAlign: "left" }}>
                  {eventsB.length > 0 ? (
                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsB.map((ev, idx) => (
