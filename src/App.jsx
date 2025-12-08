@@ -78,19 +78,36 @@ export default function App() {
 
   const isAdmin = user?.role === "admin";
 
+  // Fetch match list and hydrate events from detail API so admin view stays in sync
+  const fetchMatchesWithEvents = React.useCallback(async () => {
+    try {
+      const matches = await matchApi.getAllMatches();
+      const matchesWithEvents = await Promise.all(
+        matches.map(async (match) => {
+          try {
+            const detail = await matchApi.getMatchDetail(match.id);
+            return {
+              ...match,
+              ...detail,
+              events: detail.events || [],
+              predictions: detail.predictors || match.predictions || [],
+            };
+          } catch (error) {
+            console.error("Failed to load match detail:", match.id, error);
+            return { ...match, events: [] };
+          }
+        })
+      );
+      setMatchDays(transformMatchesToDays(matchesWithEvents));
+    } catch (error) {
+      console.error("Failed to load matches:", error);
+    }
+  }, []);
+
   // 1. Fetch dữ liệu trận đấu khi load trang
   React.useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        const matches = await matchApi.getAllMatches();
-        const uiData = transformMatchesToDays(matches);
-        setMatchDays(uiData);
-      } catch (error) {
-        console.error("Failed to load matches:", error);
-      }
-    };
-    fetchMatches();
-  }, []);
+    fetchMatchesWithEvents();
+  }, [fetchMatchesWithEvents]);
 
   const loadUsers = React.useCallback(async () => {
     try {
@@ -188,9 +205,7 @@ export default function App() {
   };
 
   // Helper reload toàn bộ danh sách trận từ API
-  const reloadMatches = React.useCallback(() => {
-    matchApi.getAllMatches().then(res => setMatchDays(transformMatchesToDays(res)));
-  }, []);
+  const reloadMatches = React.useCallback(() => fetchMatchesWithEvents(), [fetchMatchesWithEvents]);
 
   // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
@@ -722,7 +737,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                       display: "flex",
                       gap: 8,
                       alignItems: "center",
-                      justifyContent: "center",
+                      justifyContent: "flex-start",
                       padding: "4px 0",
                       flexWrap: "wrap",
                       wordBreak: "break-word",
@@ -735,7 +750,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
               </ul>
             ) : <p className="muted">-</p>}
           </div>
-          <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ flex: 1, textAlign: "left" }}>
             {eventsB.length > 0 ? (
               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {eventsB.map((ev, idx) => (
@@ -746,7 +761,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh }) {
                       display: "flex",
                       gap: 8,
                       alignItems: "center",
-                      justifyContent: "center",
+                      justifyContent: "flex-start",
                       padding: "4px 0",
                       flexWrap: "wrap",
                       wordBreak: "break-word",
@@ -1012,7 +1027,7 @@ function MatchDetailModal({ match, user, onClose }) {
                         <li
                           key={`a-${idx}`}
                           className="event-item"
-                          style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                          style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-start", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
                         >
                          <span className="eyebrow">{ev.minute || "?"}</span>
                          <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
@@ -1021,14 +1036,14 @@ function MatchDetailModal({ match, user, onClose }) {
                    </ul>
                  ) : <p className="muted">-</p>}
                </div>
-               <div style={{ flex: 1, textAlign: "right" }}>
+               <div style={{ flex: 1, textAlign: "left" }}>
                  {eventsB.length > 0 ? (
                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                       {eventsB.map((ev, idx) => (
                        <li
                          key={`b-${idx}`}
                          className="event-item"
-                         style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
+                         style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-start", padding: "4px 0", flexWrap: "wrap", wordBreak: "break-word" }}
                        >
                          <span className="eyebrow">{ev.minute || "?"}</span>
                          <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
