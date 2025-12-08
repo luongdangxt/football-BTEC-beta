@@ -951,7 +951,23 @@ function MatchDetailModal({ match, user, onClose }) {
              <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
           </div>
           <div className="match-detail__events">
-             {/* Phần events có thể map từ detail.events nếu có */}
+             <p className="eyebrow">Diễn biến</p>
+             {displayMatch.events && displayMatch.events.length > 0 ? (
+               <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                 {displayMatch.events.map((ev, idx) => {
+                   const teamName = ev.team_side === "b" ? (displayMatch.team_b || displayMatch.away?.name) : (displayMatch.team_a || displayMatch.home?.name);
+                   return (
+                     <li key={idx} className="event-item" style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                       <span className="eyebrow">{ev.minute || "?"}</span>
+                       <span>{ev.player || "?"}</span>
+                       <span className="muted">({teamName || "-"})</span>
+                     </li>
+                   );
+                 })}
+               </ul>
+             ) : (
+               <p className="muted">Chưa có sự kiện.</p>
+             )}
           </div>
           <div className="predict-list">
              <div className="predict-list__head"><p className="eyebrow">Nguoi du doan ({stats.total})</p></div>
