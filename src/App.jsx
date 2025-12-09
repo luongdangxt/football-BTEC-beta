@@ -342,11 +342,6 @@ export default function App() {
                 Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
                 {isAdmin && " (Admin)"}
               </span>
-              {isAdmin && view !== "admin" && (
-                <button className="primary-btn ghost-btn" type="button" onClick={() => setView("admin")}>
-                  Vào trang Admin
-                </button>
-              )}
               <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
                 Đăng xuất
               </button>
