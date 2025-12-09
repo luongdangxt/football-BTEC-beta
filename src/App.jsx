@@ -1135,20 +1135,59 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
       alert("Dự đoán thành công!");
       const data = await matchApi.getMatchDetail(match.id);
       setDetail(data);
-    } catch (error) { alert(error.response?.data?.detail || "Lỗi dự đoán"); }
+    } catch (error) {
+      const msg = error.response?.data?.detail || "Lỗi dự đoán";
+      alert(msg);
+      if ((msg || "").toLowerCase().includes("đã dự đoán")) {
+        try {
+          const data = await matchApi.getMatchDetail(match.id);
+          setDetail(data);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
   };
 
   const displayMatch = detail || match; 
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
   const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
-  const currentUserId = user?.studentId;
-  const myPrediction = currentUserId
-    ? predictors.find(p => p.user_msv === currentUserId)
-    : null;
+  const currentUserId = (user?.studentId || "").toString().trim().toLowerCase();
+  const currentUserName = (user?.fullName || user?.full_name || "").toString().trim().toLowerCase();
+
+  const isSameUser = (p) => {
+    const idCandidates = [
+      p.user_msv,
+      p.msv,
+      p.userId,
+      p.user_id,
+      p.userID,
+    ]
+      .map((v) => (v || "").toString().trim().toLowerCase())
+      .filter(Boolean);
+    const nameCandidates = [
+      p.full_name,
+      p.fullName,
+      p.user_full_name,
+      p.userFullName,
+      p.name,
+    ]
+      .map((v) => (v || "").toString().trim().toLowerCase())
+      .filter(Boolean);
+    return (
+      (currentUserId && idCandidates.includes(currentUserId)) ||
+      (currentUserName && nameCandidates.includes(currentUserName))
+    );
+  };
+
+  const myPrediction = React.useMemo(
+    () => (predictors || []).find((p) => isSameUser(p)),
+    [predictors, currentUserId, currentUserName]
+  );
   const hasPredicted = Boolean(myPrediction);
   const sortedPredictors = myPrediction
-    ? [myPrediction, ...predictors.filter(p => p.user_msv !== currentUserId)]
+    ? [myPrediction, ...predictors.filter(p => !isSameUser(p))]
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
   const isUpcoming = status === "upcoming" && !displayMatch.is_locked;
@@ -1173,6 +1212,16 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
   const kickoffLabel = displayMatch.kickoff
     || (displayMatch.start_time ? new Date(displayMatch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-");
+
+  React.useEffect(() => {
+    if (myPrediction?.pick) {
+      const parts = myPrediction.pick.split(/[-:x]/).map((s) => s.trim());
+      if (parts.length >= 2) {
+        setHomePick(parts[0]);
+        setAwayPick(parts[1]);
+      }
+    }
+  }, [myPrediction]);
 
   return (
     <div className="match-detail-backdrop">
@@ -1242,6 +1291,23 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
             </>
           ) : (
             <div className="predict-list" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {hasPredicted && myPrediction && (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    background: "rgba(91, 237, 159, 0.08)",
+                    borderRadius: 10,
+                    border: "1px solid rgba(91, 237, 159, 0.3)",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span className="muted" style={{ fontWeight: 600 }}>Bạn đã dự đoán</span>
+                  <span>{myPrediction.pick}</span>
+                </div>
+              )}
               <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="predict-input__row">
                   <div className="predict-team">{displayMatch.team_a}</div>
@@ -1281,8 +1347,16 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
               <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
                 {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
                 {sortedPredictors.map((p, i) => {
-                  const baseName = p.name || p.full_name || p.user_full_name || p.user_msv || "Ẩn danh";
-                  const nameLabel = p.user_msv === currentUserId ? `${baseName} (tôi)` : maskName(baseName);
+                  const fullName =
+                    p.full_name ||
+                    p.fullName ||
+                    p.user_full_name ||
+                    p.userFullName ||
+                    "";
+                  const masked = fullName
+                    ? `${fullName[0]}${"*".repeat(Math.max(3, fullName.length - 1))}`
+                    : `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}***`;
+                  const nameLabel = isSameUser(p) ? `${masked} (tôi)` : masked;
                   return (
                     <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
                       <span>{nameLabel}</span>
