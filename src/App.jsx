@@ -493,6 +493,16 @@ function BracketBoard({ onSectionSelect }) {
 }
 
 function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onOpenAuth }) {
+  const formatDay = (dateStr, fallbackLabel) => {
+    const d = dateStr ? new Date(dateStr) : null;
+    if (!d || Number.isNaN(d.getTime())) return { full: fallbackLabel || "-", short: "", numeric: "" };
+    return {
+      full: d.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+      short: d.toLocaleDateString("vi-VN", { weekday: "short" }).toUpperCase(),
+      numeric: d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    };
+  };
+
   return (
     <section className="results">
       <div className="results-header">
@@ -504,7 +514,42 @@ function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onOpenAuth 
       <div className="match-days">
         {matchDays.map((day) => (
           <article key={day.id} className="match-day">
-            <div className="match-day__heading">{day.label}</div>
+            {(() => {
+              const info = formatDay(day.id, day.label);
+              return (
+                <div
+                  className="match-day__heading"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 12px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {info.short && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 42,
+                        padding: "6px 10px",
+                        borderRadius: 999,
+                        background: "rgba(91, 237, 159, 0.18)",
+                        color: "#5bed9f",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {info.short}
+                    </span>
+                  )}
+                  <div>{info.full}</div>
+                </div>
+              );
+            })()}
             <div className="match-list">
               {(day.matches || []).map((match) => (
                 <MatchCard key={match.id} match={match} onSelect={() => onSelectMatch?.(match)} />
@@ -1008,6 +1053,7 @@ function MatchDetailModal({ match, user, onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
+  const [tab, setTab] = React.useState("info");
   const isNarrow = useIsNarrow(640);
   const detailStyle = {
     width: isNarrow ? "92vw" : "min(900px, 94vw)",
@@ -1017,6 +1063,12 @@ function MatchDetailModal({ match, user, onClose }) {
 
   React.useEffect(() => {
     if (match?.id) matchApi.getMatchDetail(match.id).then(setDetail).catch(console.error);
+  }, [match]);
+
+  React.useEffect(() => {
+    setTab("info");
+    setHomePick("");
+    setAwayPick("");
   }, [match]);
 
   const handlePredict = async () => {
@@ -1042,7 +1094,7 @@ function MatchDetailModal({ match, user, onClose }) {
     ? [myPrediction, ...predictors.filter(p => p.user_msv !== currentUserId)]
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
-  const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
+  const isUpcoming = status === "upcoming" && !displayMatch.is_locked;
   const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
   const minuteWidth = isNarrow ? 28 : 44;
@@ -1062,95 +1114,128 @@ function MatchDetailModal({ match, user, onClose }) {
   };
   const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: "right" };
   const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
+  const kickoffLabel = displayMatch.kickoff
+    || (displayMatch.start_time ? new Date(displayMatch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-");
 
   return (
     <div className="match-detail-backdrop">
-      <div className="match-detail" style={{ width: "min(900px, 94vw)", margin: "0 auto" }}>
-        <div className="match-detail__head"><div><p className="eyebrow">Chi tiết</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>×</button></div>
+      <div className="match-detail" style={detailStyle}>
+        <div className="match-detail__head">
+          <div>
+            <p className="eyebrow">Chi tiết</p>
+            <h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3>
+            <p className="muted" style={{ marginTop: 4 }}>Giờ bóng lăn: {kickoffLabel}</p>
+          </div>
+          <button className="icon-btn" onClick={onClose}>×</button>
+        </div>
+
+        <div className="match-tabs" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button className={`feed-tab ${tab === "info" ? "is-active" : ""}`} onClick={() => setTab("info")}>Thông tin</button>
+          <button className={`feed-tab ${tab === "predictions" ? "is-active" : ""}`} onClick={() => setTab("predictions")}>
+            Dự đoán ({stats.total || 0})
+          </button>
+        </div>
+
         <div className="match-detail__body">
-          <div className="match-detail__teams">
-             <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
-             <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
-             <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
-          </div>
-           <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <p className="eyebrow">Diễn biến</p>
-             <div style={eventsGridStyle}>
-               <div style={eventsColLeftStyle}>
-                  {eventsA.length > 0 ? (
-                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {eventsA.map((ev, idx) => (
-                        <li
-                          key={`a-${idx}`}
-                          className="event-item"
-                          style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
-                        >
-                         <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
-                         <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                       </li>
-                     ))}
-                   </ul>
-                 ) : <p className="muted">-</p>}
-               </div>
-               <div style={eventsColRightStyle}>
-                 {eventsB.length > 0 ? (
-                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {eventsB.map((ev, idx) => (
-                       <li
-                         key={`b-${idx}`}
-                         className="event-item"
-                         style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
-                       >
-                         <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
-                       </li>
-                     ))}
-                   </ul>
-                 ) : <p className="muted">-</p>}
-               </div>
-             </div>
-          </div>
-          <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
-             <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
-                {sortedPredictors.map((p, i) => {
-                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tôi)` : maskName(p.name);
-                  return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
-                })}
-             </div>
-             {stats.total > 0 && (
-              <div className="predict-summary">
-                <div className="predict-bar predict-bar--stack">
-                  <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
-                  <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
-                  <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
+          {tab === "info" ? (
+            <>
+              <div className="match-detail__teams">
+                <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
+                <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
+                <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
+              </div>
+
+              <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p className="eyebrow">Diễn biến</p>
+                <div style={eventsGridStyle}>
+                  <div style={eventsColLeftStyle}>
+                    {eventsA.length > 0 ? (
+                      <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {eventsA.map((ev, idx) => (
+                          <li
+                            key={`a-${idx}`}
+                            className="event-item"
+                            style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                          >
+                            <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
+                            <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="muted">-</p>}
+                  </div>
+                  <div style={eventsColRightStyle}>
+                    {eventsB.length > 0 ? (
+                      <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {eventsB.map((ev, idx) => (
+                          <li
+                            key={`b-${idx}`}
+                            className="event-item"
+                            style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                          >
+                            <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
+                            <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="muted">-</p>}
+                  </div>
                 </div>
               </div>
-             )}
-          </div>
-          <div className="predict-input">
-             <div className="predict-input__row">
-               <div className="predict-team">{displayMatch.team_a}</div>
-               <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
-               <span className="predict-input__dash">-</span>
-               <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
-               <div className="predict-team">{displayMatch.team_b}</div>
-             </div>
-            <div className="predict-action">
-              <button
-                className="primary-btn predict-btn"
-                onClick={handlePredict}
-                disabled={isClosed || hasPredicted}
-              >
-                {isClosed ? "Đã khóa" : hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán"}
-              </button>
-              {hasPredicted && myPrediction && (
-                <div className="muted" style={{ marginTop: 6, textAlign: "center", fontWeight: 700 }}>
-                  Dự đoán của bạn: {myPrediction.pick}
+
+              <div className="predict-input">
+                <div className="predict-input__row">
+                  <div className="predict-team">{displayMatch.team_a}</div>
+                  <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
+                  <span className="predict-input__dash">-</span>
+                  <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
+                  <div className="predict-team">{displayMatch.team_b}</div>
                 </div>
-              )}
+                <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+                  <button
+                    className="primary-btn predict-btn"
+                    onClick={handlePredict}
+                    disabled={!isUpcoming || hasPredicted}
+                  >
+                    {isUpcoming ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa"}
+                  </button>
+                  {!isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
+                  {hasPredicted && myPrediction && (
+                    <div className="muted" style={{ textAlign: "center", fontWeight: 700 }}>
+                      Dự đoán của bạn: {myPrediction.pick}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="predict-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="predict-summary">
+                <p className="eyebrow">Tổng lượt: {stats.total || 0}</p>
+                {stats.total > 0 ? (
+                  <div className="predict-bar predict-bar--stack">
+                    <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
+                    <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
+                    <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
+                  </div>
+                ) : (
+                  <p className="muted">Chưa có ai dự đoán</p>
+                )}
+              </div>
+              <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
+                {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
+                {sortedPredictors.map((p, i) => {
+                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tôi)` : maskName(p.name);
+                  return (
+                    <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>{nameLabel}</span>
+                      <span className="muted">{p.pick}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
