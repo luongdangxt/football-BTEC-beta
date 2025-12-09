@@ -81,7 +81,7 @@ const transformMatchesToDays = (matches) => {
 // --- APP MAIN COMPONENT ---
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
-  const [view, setView] = React.useState("bracket");
+  const [view, setView] = React.useState("results");
   const [matchDays, setMatchDays] = React.useState([]); // Bắt đầu với mảng rỗng
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
@@ -278,7 +278,7 @@ export default function App() {
     localStorage.removeItem("token");
     setUser(null);
     setSelectedMatch(null);
-    setView("bracket");
+    setView("results");
   };
 
   const selectedLabel = selectedSection ? sectionMatches[selectedSection]?.label : null;
@@ -304,9 +304,6 @@ export default function App() {
 
         {isAdmin && (
           <div className="page-tabs">
-            <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
-              Cây đấu
-            </button>
             <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
               Kết quả
             </button>
@@ -350,21 +347,7 @@ export default function App() {
           )}
         </div>
 
-        {view === "bracket" ? (
-          <section className="section-block section-block--bare">
-            <BracketBoard onSectionSelect={handleSectionSelect} />
-          </section>
-        ) : view === "results" ? (
-          <section className="section-block">
-            <ResultsFeed
-              matchDays={matchDays}
-              selectedLabel={selectedLabel}
-              onBack={() => setView("bracket")}
-              onSelectMatch={setSelectedMatch}
-              onOpenAuth={() => setShowAuth(true)}
-            />
-          </section>
-        ) : (
+        {view === "admin" ? (
           <section className="section-block">
             <AdminPanel
               matchDays={matchDays}
@@ -375,6 +358,15 @@ export default function App() {
               onUpdateMatch={handleUpdateMatch}
               onDeleteMatch={handleDeleteMatch}
               onReloadMatches={reloadMatches}
+            />
+          </section>
+        ) : (
+          <section className="section-block">
+            <ResultsFeed
+              matchDays={matchDays}
+              selectedLabel={selectedLabel}
+              onSelectMatch={setSelectedMatch}
+              onOpenAuth={() => setShowAuth(true)}
             />
           </section>
         )}
@@ -500,13 +492,12 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onOpenAuth }) {
+function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onOpenAuth }) {
   return (
     <section className="results">
       <div className="results-header">
         <div><p className="eyebrow">Trang kết quả</p><h2>Tất cả trận đấu</h2>{selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}</div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" onClick={() => onBack()}>Quay lại cây</button>
           <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>Đăng nhập</button>
         </div>
       </div>
