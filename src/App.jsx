@@ -324,29 +324,6 @@ export default function App() {
           </div>
         )}
 
-        {user && (
-          <div
-            className="user-strip"
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-              width: "100%",
-              margin: "0 0 12px",
-            }}
-          >
-            <span className="muted">
-              Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
-              {isAdmin && " (Admin)"}
-            </span>
-            <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
-              Đăng xuất
-            </button>
-          </div>
-        )}
-
         {view === "admin" ? (
           <section className="section-block">
             <AdminPanel
@@ -368,6 +345,8 @@ export default function App() {
               onSelectMatch={handleOpenMatch}
               onPredictMatch={handlePredictMatch}
               onOpenAuth={() => setShowAuth(true)}
+              user={user}
+              onLogout={handleLogout}
             />
           </section>
         )}
@@ -503,7 +482,7 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMatch, onOpenAuth }) {
+function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMatch, onOpenAuth, user, onLogout }) {
   const formatDay = (dateStr, fallbackLabel) => {
     const d = dateStr ? new Date(dateStr) : null;
     if (!d || Number.isNaN(d.getTime())) return { full: fallbackLabel || "-", short: "", numeric: "" };
@@ -519,7 +498,27 @@ function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMa
       <div className="results-header">
         <div><p className="eyebrow">Trang kết quả</p><h2>Tất cả trận đấu</h2>{selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}</div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>Đăng nhập</button>
+          {user ? (
+            <div
+              className="user-strip"
+              style={{
+                margin: 0,
+                justifyContent: "flex-end",
+              }}
+            >
+              <span className="muted">
+                Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
+                {user.role === "admin" && " (Admin)"}
+              </span>
+              <button className="primary-btn ghost-btn" type="button" onClick={() => onLogout?.()}>
+                Đăng xuất
+              </button>
+            </div>
+          ) : (
+            <button className="primary-btn ghost-btn" type="button" onClick={() => onOpenAuth?.()}>
+              Đăng nhập
+            </button>
+          )}
         </div>
       </div>
       <div className="match-days">
