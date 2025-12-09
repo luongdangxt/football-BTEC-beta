@@ -324,34 +324,28 @@ export default function App() {
           </div>
         )}
 
-        <div
-          className="user-strip"
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
-            width: "100%",
-            margin: "0 0 12px",
-          }}
-        >
-          {user ? (
-            <>
-              <span className="muted">
-                Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
-                {isAdmin && " (Admin)"}
-              </span>
-              <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
-                Đăng xuất
-              </button>
-            </>
-          ) : (
-            <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
-              Đăng nhập
+        {user && (
+          <div
+            className="user-strip"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+              width: "100%",
+              margin: "0 0 12px",
+            }}
+          >
+            <span className="muted">
+              Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
+              {isAdmin && " (Admin)"}
+            </span>
+            <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
+              Đăng xuất
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {view === "admin" ? (
           <section className="section-block">
