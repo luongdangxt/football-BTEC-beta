@@ -1113,7 +1113,8 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const [tab, setTab] = React.useState(initialTab);
   const isNarrow = useIsNarrow(640);
   const detailStyle = {
-    width: isNarrow ? "92vw" : "min(900px, 94vw)",
+    width: isNarrow ? "calc(100vw - 32px)" : "min(900px, calc(100vw - 48px))",
+    maxWidth: "calc(100vw - 24px)",
     margin: "0 auto",
     padding: isNarrow ? "16px" : "24px",
   };
@@ -1197,19 +1198,19 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const eventFontSize = isNarrow ? "12px" : "14px";
   const eventsGridStyle = {
     display: "grid",
-    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 140 : 220}px, 1fr))`,
-    columnGap: isNarrow ? 12 : 48,
+    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 120 : 220}px, 1fr))`,
+    columnGap: isNarrow ? 8 : 48,
     rowGap: isNarrow ? 8 : 0,
     justifyContent: "center",
     alignItems: "flex-start",
     width: "100%",
     maxWidth: isNarrow ? "100%" : "820px",
-    padding: isNarrow ? "0 4px" : "0 12px",
+    padding: isNarrow ? "0 2px" : "0 12px",
     boxSizing: "border-box",
     margin: "12px auto"
   };
-  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: "right" };
-  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 240 : 320, justifySelf: "end", textAlign: "right" };
+  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 240 : 320, justifySelf: "start", textAlign: "left" };
   const kickoffLabel = displayMatch.kickoff
     || (displayMatch.start_time ? new Date(displayMatch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-");
   const clampScore = (val) => {
