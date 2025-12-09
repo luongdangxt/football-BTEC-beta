@@ -85,6 +85,7 @@ export default function App() {
   const [matchDays, setMatchDays] = React.useState([]); // Bắt đầu với mảng rỗng
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
+  const [matchModalTab, setMatchModalTab] = React.useState("info");
   const [user, setUser] = React.useState(null);
   const [users, setUsers] = React.useState([]);
 
@@ -236,6 +237,16 @@ export default function App() {
     );
   };
 
+  const handleOpenMatch = (match) => {
+    setSelectedMatch(match);
+    setMatchModalTab("info");
+  };
+
+  const handlePredictMatch = (match) => {
+    setSelectedMatch(match);
+    setMatchModalTab("predictions");
+  };
+
   const handleAuthSubmit = async (payload, mode) => {
     try {
       if (mode === "login") {
@@ -365,7 +376,8 @@ export default function App() {
             <ResultsFeed
               matchDays={matchDays}
               selectedLabel={selectedLabel}
-              onSelectMatch={setSelectedMatch}
+              onSelectMatch={handleOpenMatch}
+              onPredictMatch={handlePredictMatch}
               onOpenAuth={() => setShowAuth(true)}
             />
           </section>
@@ -376,7 +388,17 @@ export default function App() {
           onClose={() => setShowAuth(false)} 
           onAuthSubmit={handleAuthSubmit} 
         />
-        {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
+        {selectedMatch && (
+          <MatchDetailModal
+            match={selectedMatch}
+            user={user}
+            initialTab={matchModalTab}
+            onClose={() => {
+              setSelectedMatch(null);
+              setMatchModalTab("info");
+            }}
+          />
+        )}
       </main>
     </div>
   );
@@ -492,7 +514,7 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onOpenAuth }) {
+function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMatch, onOpenAuth }) {
   const formatDay = (dateStr, fallbackLabel) => {
     const d = dateStr ? new Date(dateStr) : null;
     if (!d || Number.isNaN(d.getTime())) return { full: fallbackLabel || "-", short: "", numeric: "" };
@@ -552,7 +574,12 @@ function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onOpenAuth 
             })()}
             <div className="match-list">
               {(day.matches || []).map((match) => (
-                <MatchCard key={match.id} match={match} onSelect={() => onSelectMatch?.(match)} />
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onSelect={() => onSelectMatch?.(match)}
+                  onPredict={() => onPredictMatch?.(match)}
+                />
               ))}
             </div>
           </article>
@@ -1010,7 +1037,7 @@ function Connector({ className, mode }) {
   return <div className={className}><svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none"><path className="connector-path" d={path} /></svg></div>;
 }
 
-function MatchCard({ match, onSelect }) {
+function MatchCard({ match, onSelect, onPredict }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
   
   // Sửa lại tiếng Việt có dấu
@@ -1021,7 +1048,8 @@ function MatchCard({ match, onSelect }) {
 
   const handlePredictClick = (e) => {
     e.stopPropagation();
-    onSelect?.();
+    if (onPredict) onPredict(match);
+    else onSelect?.();
   };
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
@@ -1078,11 +1106,11 @@ function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
 }
 
-function MatchDetailModal({ match, user, onClose }) {
+function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
-  const [tab, setTab] = React.useState("info");
+  const [tab, setTab] = React.useState(initialTab);
   const isNarrow = useIsNarrow(640);
   const detailStyle = {
     width: isNarrow ? "92vw" : "min(900px, 94vw)",
@@ -1095,10 +1123,10 @@ function MatchDetailModal({ match, user, onClose }) {
   }, [match]);
 
   React.useEffect(() => {
-    setTab("info");
+    setTab(initialTab || "info");
     setHomePick("");
     setAwayPick("");
-  }, [match]);
+  }, [match, initialTab]);
 
   const handlePredict = async () => {
     if (!homePick || !awayPick) return alert("Vui lòng nhập tỷ số");
@@ -1211,8 +1239,10 @@ function MatchDetailModal({ match, user, onClose }) {
                   </div>
                 </div>
               </div>
-
-              <div className="predict-input">
+            </>
+          ) : (
+            <div className="predict-list" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="predict-input__row">
                   <div className="predict-team">{displayMatch.team_a}</div>
                   <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
@@ -1236,9 +1266,6 @@ function MatchDetailModal({ match, user, onClose }) {
                   )}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="predict-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="predict-summary">
                 <p className="eyebrow">Tổng lượt: {stats.total || 0}</p>
                 {stats.total > 0 ? (
@@ -1254,7 +1281,8 @@ function MatchDetailModal({ match, user, onClose }) {
               <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
                 {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
                 {sortedPredictors.map((p, i) => {
-                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tôi)` : maskName(p.name);
+                  const baseName = p.name || p.full_name || p.user_full_name || p.user_msv || "Ẩn danh";
+                  const nameLabel = p.user_msv === currentUserId ? `${baseName} (tôi)` : maskName(baseName);
                   return (
                     <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
                       <span>{nameLabel}</span>
