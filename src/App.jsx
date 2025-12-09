@@ -1212,13 +1212,19 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
   const kickoffLabel = displayMatch.kickoff
     || (displayMatch.start_time ? new Date(displayMatch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-");
+  const clampScore = (val) => {
+    if (val === "" || val == null) return "";
+    const num = Number(val);
+    if (Number.isNaN(num)) return "";
+    return Math.max(0, num);
+  };
 
   React.useEffect(() => {
     if (myPrediction?.pick) {
       const parts = myPrediction.pick.split(/[-:x]/).map((s) => s.trim());
       if (parts.length >= 2) {
-        setHomePick(parts[0]);
-        setAwayPick(parts[1]);
+        setHomePick(clampScore(parts[0]).toString());
+        setAwayPick(clampScore(parts[1]).toString());
       }
     }
   }, [myPrediction]);
@@ -1311,9 +1317,21 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
               <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="predict-input__row">
                   <div className="predict-team">{displayMatch.team_a}</div>
-                  <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
+                  <input
+                    className="predict-score"
+                    type="number"
+                    min="0"
+                    value={homePick}
+                    onChange={e => setHomePick(clampScore(e.target.value).toString())}
+                  />
                   <span className="predict-input__dash">-</span>
-                  <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
+                  <input
+                    className="predict-score"
+                    type="number"
+                    min="0"
+                    value={awayPick}
+                    onChange={e => setAwayPick(clampScore(e.target.value).toString())}
+                  />
                   <div className="predict-team">{displayMatch.team_b}</div>
                 </div>
                 <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
@@ -1347,15 +1365,20 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
               <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
                 {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
                 {sortedPredictors.map((p, i) => {
-                  const fullName =
+                  const raw =
                     p.full_name ||
                     p.fullName ||
                     p.user_full_name ||
                     p.userFullName ||
+                    p.user_msv ||
+                    p.msv ||
+                    p.userId ||
+                    p.user_id ||
+                    p.userID ||
                     "";
-                  const masked = fullName
-                    ? `${fullName[0]}${"*".repeat(Math.max(3, fullName.length - 1))}`
-                    : `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}***`;
+                  const clean = raw ? raw.toString().trim() : "";
+                  const firstChar = clean ? clean[0] : String.fromCharCode(65 + (i % 26));
+                  const masked = `${firstChar}${"*".repeat(Math.max(3, (clean || "****").length - 1))}`;
                   const nameLabel = masked;
                   return (
                     <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
