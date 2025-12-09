@@ -1310,7 +1310,7 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
                     justifyContent: "space-between",
                   }}
                 >
-                  <span className="muted" style={{ fontWeight: 600 }}>Bạn đã dự đoán</span>
+                  <span className="muted" style={{ fontWeight: 600 }}>Dự đoán của tôi</span>
                   <span>{myPrediction.pick}</span>
                 </div>
               )}
@@ -1343,11 +1343,6 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
                     {isUpcoming ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa"}
                   </button>
                   {!isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
-                  {hasPredicted && myPrediction && (
-                    <div className="muted" style={{ textAlign: "center", fontWeight: 700 }}>
-                      Dự đoán của bạn: {myPrediction.pick}
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="predict-summary">
