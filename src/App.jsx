@@ -1017,6 +1017,12 @@ function MatchCard({ match, onSelect }) {
   const statusText = match.status === "live" ? "Đang diễn ra" 
                    : match.status === "ft" ? "Kết thúc" 
                    : "Sắp diễn ra";
+  const canPredict = match.status === "upcoming" && !match.is_locked;
+
+  const handlePredictClick = (e) => {
+    e.stopPropagation();
+    onSelect?.();
+  };
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
       <div className="match-meta">
@@ -1028,6 +1034,29 @@ function MatchCard({ match, onSelect }) {
         <TeamCell team={match.home} />
         <div className="scoreline"><span className="score">{match.home.score ?? "-"}</span><span className="dash">-</span><span className="score">{match.away.score ?? "-"}</span></div>
         <TeamCell team={match.away} align="right" />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 12, flexWrap: "wrap" }}>
+        <span className="muted" style={{ fontSize: 13 }}>Ấn để xem chi tiết & dự đoán</span>
+        <button
+          className="primary-btn"
+          type="button"
+          disabled={!canPredict}
+          onClick={handlePredictClick}
+          style={{
+            padding: "8px 14px",
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: 0.2,
+            boxShadow: "0 0 0 2px rgba(91, 237, 159, 0.25), 0 10px 30px rgba(91, 237, 159, 0.35)",
+            background: canPredict ? "linear-gradient(120deg, #5bed9f, #38d27f)" : "rgba(255,255,255,0.12)",
+            color: canPredict ? "#0a2c1d" : "#ccc",
+            border: "none",
+            transition: "transform 120ms ease, box-shadow 120ms ease",
+            transform: canPredict ? "translateY(-1px)" : "none",
+          }}
+        >
+          {canPredict ? "Dự đoán" : "Đã khóa"}
+        </button>
       </div>
     </article>
   );
