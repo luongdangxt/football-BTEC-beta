@@ -81,10 +81,11 @@ const transformMatchesToDays = (matches) => {
 // --- APP MAIN COMPONENT ---
 export default function App() {
   const [showAuth, setShowAuth] = React.useState(false);
-  const [view, setView] = React.useState("bracket");
+  const [view, setView] = React.useState("results");
   const [matchDays, setMatchDays] = React.useState([]); // Bắt đầu với mảng rỗng
   const [selectedSection, setSelectedSection] = React.useState(null);
   const [selectedMatch, setSelectedMatch] = React.useState(null);
+  const [matchModalTab, setMatchModalTab] = React.useState("info");
   const [user, setUser] = React.useState(null);
   const [users, setUsers] = React.useState([]);
 
@@ -236,6 +237,16 @@ export default function App() {
     );
   };
 
+  const handleOpenMatch = (match) => {
+    setSelectedMatch(match);
+    setMatchModalTab("info");
+  };
+
+  const handlePredictMatch = (match) => {
+    setSelectedMatch(match);
+    setMatchModalTab("predictions");
+  };
+
   const handleAuthSubmit = async (payload, mode) => {
     try {
       if (mode === "login") {
@@ -278,7 +289,7 @@ export default function App() {
     localStorage.removeItem("token");
     setUser(null);
     setSelectedMatch(null);
-    setView("bracket");
+    setView("results");
   };
 
   const selectedLabel = selectedSection ? sectionMatches[selectedSection]?.label : null;
@@ -304,9 +315,6 @@ export default function App() {
 
         {isAdmin && (
           <div className="page-tabs">
-            <button className={`page-tab ${view === "bracket" ? "is-active" : ""}`} type="button" onClick={() => setView("bracket")}>
-              Cây đấu
-            </button>
             <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
               Kết quả
             </button>
@@ -316,55 +324,30 @@ export default function App() {
           </div>
         )}
 
-        <div
-          className="user-strip"
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
-            width: "100%",
-            margin: "0 0 12px",
-          }}
-        >
-          {user ? (
-            <>
-              <span className="muted">
-                Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
-                {isAdmin && " (Admin)"}
-              </span>
-              {isAdmin && view !== "admin" && (
-                <button className="primary-btn ghost-btn" type="button" onClick={() => setView("admin")}>
-                  Vào trang Admin
-                </button>
-              )}
-              <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
-                Đăng xuất
-              </button>
-            </>
-          ) : (
-            <button className="primary-btn ghost-btn" type="button" onClick={() => setShowAuth(true)}>
-              Đăng nhập
+        {user && (
+          <div
+            className="user-strip"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+              width: "100%",
+              margin: "0 0 12px",
+            }}
+          >
+            <span className="muted">
+              Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
+              {isAdmin && " (Admin)"}
+            </span>
+            <button className="primary-btn ghost-btn" type="button" onClick={handleLogout}>
+              Đăng xuất
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {view === "bracket" ? (
-          <section className="section-block section-block--bare">
-            <BracketBoard onSectionSelect={handleSectionSelect} />
-          </section>
-        ) : view === "results" ? (
-          <section className="section-block">
-            <ResultsFeed
-              matchDays={matchDays}
-              selectedLabel={selectedLabel}
-              onBack={() => setView("bracket")}
-              onSelectMatch={setSelectedMatch}
-              onOpenAuth={() => setShowAuth(true)}
-            />
-          </section>
-        ) : (
+        {view === "admin" ? (
           <section className="section-block">
             <AdminPanel
               matchDays={matchDays}
@@ -377,6 +360,16 @@ export default function App() {
               onReloadMatches={reloadMatches}
             />
           </section>
+        ) : (
+          <section className="section-block">
+            <ResultsFeed
+              matchDays={matchDays}
+              selectedLabel={selectedLabel}
+              onSelectMatch={handleOpenMatch}
+              onPredictMatch={handlePredictMatch}
+              onOpenAuth={() => setShowAuth(true)}
+            />
+          </section>
         )}
 
         <AuthModal 
@@ -384,7 +377,17 @@ export default function App() {
           onClose={() => setShowAuth(false)} 
           onAuthSubmit={handleAuthSubmit} 
         />
-        {selectedMatch && <MatchDetailModal match={selectedMatch} user={user} onClose={() => setSelectedMatch(null)} />}
+        {selectedMatch && (
+          <MatchDetailModal
+            match={selectedMatch}
+            user={user}
+            initialTab={matchModalTab}
+            onClose={() => {
+              setSelectedMatch(null);
+              setMatchModalTab("info");
+            }}
+          />
+        )}
       </main>
     </div>
   );
@@ -500,23 +503,72 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ matchDays = [], selectedLabel, onBack, onSelectMatch, onOpenAuth }) {
+function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMatch, onOpenAuth }) {
+  const formatDay = (dateStr, fallbackLabel) => {
+    const d = dateStr ? new Date(dateStr) : null;
+    if (!d || Number.isNaN(d.getTime())) return { full: fallbackLabel || "-", short: "", numeric: "" };
+    return {
+      full: d.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+      short: d.toLocaleDateString("vi-VN", { weekday: "short" }).toUpperCase(),
+      numeric: d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    };
+  };
+
   return (
     <section className="results">
       <div className="results-header">
         <div><p className="eyebrow">Trang kết quả</p><h2>Tất cả trận đấu</h2>{selectedLabel && <p className="muted">Đang xem nhánh: {selectedLabel}</p>}</div>
         <div className="results-actions">
-          <button className="primary-btn ghost-btn" onClick={() => onBack()}>Quay lại cây</button>
           <button className="primary-btn ghost-btn" onClick={() => onOpenAuth?.()}>Đăng nhập</button>
         </div>
       </div>
       <div className="match-days">
         {matchDays.map((day) => (
           <article key={day.id} className="match-day">
-            <div className="match-day__heading">{day.label}</div>
+            {(() => {
+              const info = formatDay(day.id, day.label);
+              return (
+                <div
+                  className="match-day__heading"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 12px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {info.short && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 42,
+                        padding: "6px 10px",
+                        borderRadius: 999,
+                        background: "rgba(91, 237, 159, 0.18)",
+                        color: "#5bed9f",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {info.short}
+                    </span>
+                  )}
+                  <div>{info.full}</div>
+                </div>
+              );
+            })()}
             <div className="match-list">
               {(day.matches || []).map((match) => (
-                <MatchCard key={match.id} match={match} onSelect={() => onSelectMatch?.(match)} />
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onSelect={() => onSelectMatch?.(match)}
+                  onPredict={() => onPredictMatch?.(match)}
+                />
               ))}
             </div>
           </article>
@@ -974,13 +1026,20 @@ function Connector({ className, mode }) {
   return <div className={className}><svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none"><path className="connector-path" d={path} /></svg></div>;
 }
 
-function MatchCard({ match, onSelect }) {
+function MatchCard({ match, onSelect, onPredict }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
   
   // Sửa lại tiếng Việt có dấu
   const statusText = match.status === "live" ? "Đang diễn ra" 
                    : match.status === "ft" ? "Kết thúc" 
                    : "Sắp diễn ra";
+  const canPredict = match.status === "upcoming" && !match.is_locked;
+
+  const handlePredictClick = (e) => {
+    e.stopPropagation();
+    if (onPredict) onPredict(match);
+    else onSelect?.();
+  };
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
       <div className="match-meta">
@@ -992,6 +1051,29 @@ function MatchCard({ match, onSelect }) {
         <TeamCell team={match.home} />
         <div className="scoreline"><span className="score">{match.home.score ?? "-"}</span><span className="dash">-</span><span className="score">{match.away.score ?? "-"}</span></div>
         <TeamCell team={match.away} align="right" />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 12, flexWrap: "wrap" }}>
+        <span className="muted" style={{ fontSize: 13 }}>Ấn để xem chi tiết & dự đoán</span>
+        <button
+          className="primary-btn"
+          type="button"
+          disabled={!canPredict}
+          onClick={handlePredictClick}
+          style={{
+            padding: "8px 14px",
+            fontSize: 13,
+            fontWeight: 800,
+            letterSpacing: 0.2,
+            boxShadow: "0 0 0 2px rgba(91, 237, 159, 0.25), 0 10px 30px rgba(91, 237, 159, 0.35)",
+            background: canPredict ? "linear-gradient(120deg, #5bed9f, #38d27f)" : "rgba(255,255,255,0.12)",
+            color: canPredict ? "#0a2c1d" : "#ccc",
+            border: "none",
+            transition: "transform 120ms ease, box-shadow 120ms ease",
+            transform: canPredict ? "translateY(-1px)" : "none",
+          }}
+        >
+          {canPredict ? "Dự đoán" : "Đã khóa"}
+        </button>
       </div>
     </article>
   );
@@ -1013,13 +1095,15 @@ function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
 }
 
-function MatchDetailModal({ match, user, onClose }) {
+function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
+  const [tab, setTab] = React.useState(initialTab);
   const isNarrow = useIsNarrow(640);
   const detailStyle = {
-    width: isNarrow ? "92vw" : "min(900px, 94vw)",
+    width: isNarrow ? "calc(100vw - 32px)" : "min(900px, calc(100vw - 48px))",
+    maxWidth: "calc(100vw - 24px)",
     margin: "0 auto",
     padding: isNarrow ? "16px" : "24px",
   };
@@ -1028,6 +1112,12 @@ function MatchDetailModal({ match, user, onClose }) {
     if (match?.id) matchApi.getMatchDetail(match.id).then(setDetail).catch(console.error);
   }, [match]);
 
+  React.useEffect(() => {
+    setTab(initialTab || "info");
+    setHomePick("");
+    setAwayPick("");
+  }, [match, initialTab]);
+
   const handlePredict = async () => {
     if (!homePick || !awayPick) return alert("Vui lòng nhập tỷ số");
     try {
@@ -1035,131 +1125,256 @@ function MatchDetailModal({ match, user, onClose }) {
       alert("Dự đoán thành công!");
       const data = await matchApi.getMatchDetail(match.id);
       setDetail(data);
-    } catch (error) { alert(error.response?.data?.detail || "Lỗi dự đoán"); }
+    } catch (error) {
+      const msg = error.response?.data?.detail || "Lỗi dự đoán";
+      alert(msg);
+      if ((msg || "").toLowerCase().includes("đã dự đoán")) {
+        try {
+          const data = await matchApi.getMatchDetail(match.id);
+          setDetail(data);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
   };
 
   const displayMatch = detail || match; 
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
   const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
-  const currentUserId = user?.studentId;
-  const myPrediction = currentUserId
-    ? predictors.find(p => p.user_msv === currentUserId)
-    : null;
+  const currentUserId = (user?.studentId || "").toString().trim().toLowerCase();
+  const currentUserName = (user?.fullName || user?.full_name || "").toString().trim().toLowerCase();
+
+  const isSameUser = (p) => {
+    const idCandidates = [
+      p.user_msv,
+      p.msv,
+      p.userId,
+      p.user_id,
+      p.userID,
+    ]
+      .map((v) => (v || "").toString().trim().toLowerCase())
+      .filter(Boolean);
+    const nameCandidates = [
+      p.full_name,
+      p.fullName,
+      p.user_full_name,
+      p.userFullName,
+      p.name,
+    ]
+      .map((v) => (v || "").toString().trim().toLowerCase())
+      .filter(Boolean);
+    return (
+      (currentUserId && idCandidates.includes(currentUserId)) ||
+      (currentUserName && nameCandidates.includes(currentUserName))
+    );
+  };
+
+  const myPrediction = React.useMemo(
+    () => (predictors || []).find((p) => isSameUser(p)),
+    [predictors, currentUserId, currentUserName]
+  );
   const hasPredicted = Boolean(myPrediction);
   const sortedPredictors = myPrediction
-    ? [myPrediction, ...predictors.filter(p => p.user_msv !== currentUserId)]
+    ? [myPrediction, ...predictors.filter(p => !isSameUser(p))]
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
-  const isClosed = status === "live" || status === "ft" || displayMatch.is_locked;
+  const isUpcoming = status === "upcoming" && !displayMatch.is_locked;
   const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
   const minuteWidth = isNarrow ? 28 : 44;
   const eventFontSize = isNarrow ? "12px" : "14px";
   const eventsGridStyle = {
     display: "grid",
-    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 140 : 220}px, 1fr))`,
-    columnGap: isNarrow ? 12 : 48,
+    gridTemplateColumns: `repeat(2, minmax(${isNarrow ? 120 : 220}px, 1fr))`,
+    columnGap: isNarrow ? 8 : 48,
     rowGap: isNarrow ? 8 : 0,
     justifyContent: "center",
     alignItems: "flex-start",
     width: "100%",
     maxWidth: isNarrow ? "100%" : "820px",
-    padding: isNarrow ? "0 4px" : "0 12px",
+    padding: isNarrow ? "0 2px" : "0 12px",
     boxSizing: "border-box",
     margin: "12px auto"
   };
-  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "end", textAlign: "right" };
-  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 260 : 320, justifySelf: "start", textAlign: "left" };
+  const eventsColLeftStyle = { width: "100%", maxWidth: isNarrow ? 240 : 320, justifySelf: "end", textAlign: "right" };
+  const eventsColRightStyle = { width: "100%", maxWidth: isNarrow ? 240 : 320, justifySelf: "start", textAlign: "left" };
+  const kickoffLabel = displayMatch.kickoff
+    || (displayMatch.start_time ? new Date(displayMatch.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-");
+  const clampScore = (val) => {
+    if (val === "" || val == null) return "";
+    const num = Number(val);
+    if (Number.isNaN(num)) return "";
+    return Math.max(0, num);
+  };
+
+  React.useEffect(() => {
+    if (myPrediction?.pick) {
+      const parts = myPrediction.pick.split(/[-:x]/).map((s) => s.trim());
+      if (parts.length >= 2) {
+        setHomePick(clampScore(parts[0]).toString());
+        setAwayPick(clampScore(parts[1]).toString());
+      }
+    }
+  }, [myPrediction]);
 
   return (
     <div className="match-detail-backdrop">
-      <div className="match-detail" style={{ width: "min(900px, 94vw)", margin: "0 auto" }}>
-        <div className="match-detail__head"><div><p className="eyebrow">Chi tiết</p><h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3></div><button className="icon-btn" onClick={onClose}>×</button></div>
+      <div className="match-detail" style={detailStyle}>
+        <div className="match-detail__head">
+          <div>
+            <p className="eyebrow">Chi tiết</p>
+            <h3>{displayMatch.team_a} vs {displayMatch.team_b}</h3>
+            <p className="muted" style={{ marginTop: 4 }}>Giờ bóng lăn: {kickoffLabel}</p>
+          </div>
+          <button className="icon-btn" onClick={onClose}>×</button>
+        </div>
+
+        <div className="match-tabs" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button className={`feed-tab ${tab === "info" ? "is-active" : ""}`} onClick={() => setTab("info")}>Thông tin</button>
+          <button className={`feed-tab ${tab === "predictions" ? "is-active" : ""}`} onClick={() => setTab("predictions")}>
+            Dự đoán ({stats.total || 0})
+          </button>
+        </div>
+
         <div className="match-detail__body">
-          <div className="match-detail__teams">
-             <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
-             <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
-             <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
-          </div>
-           <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <p className="eyebrow">Diễn biến</p>
-             <div style={eventsGridStyle}>
-               <div style={eventsColLeftStyle}>
-                  {eventsA.length > 0 ? (
-                    <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {eventsA.map((ev, idx) => (
-                        <li
-                          key={`a-${idx}`}
-                          className="event-item"
-                          style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
-                        >
-                         <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
-                         <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                       </li>
-                     ))}
-                   </ul>
-                 ) : <p className="muted">-</p>}
-               </div>
-               <div style={eventsColRightStyle}>
-                 {eventsB.length > 0 ? (
-                   <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {eventsB.map((ev, idx) => (
-                       <li
-                         key={`b-${idx}`}
-                         className="event-item"
-                         style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
-                       >
-                         <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
-                         <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
-                       </li>
-                     ))}
-                   </ul>
-                 ) : <p className="muted">-</p>}
-               </div>
-             </div>
-          </div>
-          <div className="predict-list">
-             <div className="predict-list__head"><p className="eyebrow">Người dự đoán ({stats.total})</p></div>
-             <div className="predict-list__body" style={{maxHeight: '120px', overflowY: 'auto'}}>
-                {sortedPredictors.map((p, i) => {
-                  const nameLabel = p.user_msv === currentUserId ? `${p.name} (tôi)` : maskName(p.name);
-                  return <div key={i} className="predict-item"><span>{nameLabel}</span><span className="muted">{p.pick}</span></div>;
-                })}
-             </div>
-             {stats.total > 0 && (
-              <div className="predict-summary">
-                <div className="predict-bar predict-bar--stack">
-                  <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
-                  <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
-                  <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
+          {tab === "info" ? (
+            <>
+              <div className="match-detail__teams">
+                <TeamCell team={{ name: displayMatch.team_a, logo: displayMatch.team_a_logo, color: displayMatch.team_a_color }} />
+                <div className="scoreline scoreline--lg"><span className="score">{displayMatch.score_a ?? "-"}</span>-<span className="score">{displayMatch.score_b ?? "-"}</span></div>
+                <TeamCell team={{ name: displayMatch.team_b, logo: displayMatch.team_b_logo, color: displayMatch.team_b_color }} align="right" />
+              </div>
+
+              <div className="match-detail__events" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p className="eyebrow">Diễn biến</p>
+                <div style={eventsGridStyle}>
+                  <div style={eventsColLeftStyle}>
+                    {eventsA.length > 0 ? (
+                      <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {eventsA.map((ev, idx) => (
+                          <li
+                            key={`a-${idx}`}
+                            className="event-item"
+                            style={{ display: "grid", gridTemplateColumns: `1fr ${minuteWidth}px`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                          >
+                            <span style={{ wordBreak: "break-word", justifySelf: "end", textAlign: "right" }}>{ev.player || "?"}</span>
+                            <span className="eyebrow" style={{ justifySelf: "end", fontSize: eventFontSize }}>{ev.minute || "?"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="muted">-</p>}
+                  </div>
+                  <div style={eventsColRightStyle}>
+                    {eventsB.length > 0 ? (
+                      <ul className="event-list" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {eventsB.map((ev, idx) => (
+                          <li
+                            key={`b-${idx}`}
+                            className="event-item"
+                            style={{ display: "grid", gridTemplateColumns: `${minuteWidth}px 1fr`, columnGap: 10, alignItems: "center", padding: "4px 0", wordBreak: "break-word", fontSize: eventFontSize }}
+                          >
+                            <span className="eyebrow" style={{ fontSize: eventFontSize }}>{ev.minute || "?"}</span>
+                            <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="muted">-</p>}
+                  </div>
                 </div>
               </div>
-             )}
-          </div>
-          <div className="predict-input">
-             <div className="predict-input__row">
-               <div className="predict-team">{displayMatch.team_a}</div>
-               <input className="predict-score" type="number" value={homePick} onChange={e => setHomePick(e.target.value)} />
-               <span className="predict-input__dash">-</span>
-               <input className="predict-score" type="number" value={awayPick} onChange={e => setAwayPick(e.target.value)} />
-               <div className="predict-team">{displayMatch.team_b}</div>
-             </div>
-            <div className="predict-action">
-              <button
-                className="primary-btn predict-btn"
-                onClick={handlePredict}
-                disabled={isClosed || hasPredicted}
-              >
-                {isClosed ? "Đã khóa" : hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán"}
-              </button>
+            </>
+          ) : (
+            <div className="predict-list" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {hasPredicted && myPrediction && (
-                <div className="muted" style={{ marginTop: 6, textAlign: "center", fontWeight: 700 }}>
-                  Dự đoán của bạn: {myPrediction.pick}
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    background: "rgba(91, 237, 159, 0.08)",
+                    borderRadius: 10,
+                    border: "1px solid rgba(91, 237, 159, 0.3)",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span className="muted" style={{ fontWeight: 600 }}>Dự đoán của tôi</span>
+                  <span>{myPrediction.pick}</span>
                 </div>
               )}
+              <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="predict-input__row">
+                  <div className="predict-team">{displayMatch.team_a}</div>
+                  <input
+                    className="predict-score"
+                    type="number"
+                    min="0"
+                    value={homePick}
+                    onChange={e => setHomePick(clampScore(e.target.value).toString())}
+                  />
+                  <span className="predict-input__dash">-</span>
+                  <input
+                    className="predict-score"
+                    type="number"
+                    min="0"
+                    value={awayPick}
+                    onChange={e => setAwayPick(clampScore(e.target.value).toString())}
+                  />
+                  <div className="predict-team">{displayMatch.team_b}</div>
+                </div>
+                <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+                  <button
+                    className="primary-btn predict-btn"
+                    onClick={handlePredict}
+                    disabled={!isUpcoming || hasPredicted}
+                  >
+                    {isUpcoming ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa"}
+                  </button>
+                  {!isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
+                </div>
+              </div>
+              <div className="predict-summary">
+                <p className="eyebrow">Tổng lượt: {stats.total || 0}</p>
+                {stats.total > 0 ? (
+                  <div className="predict-bar predict-bar--stack">
+                    <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
+                    <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
+                    <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
+                  </div>
+                ) : (
+                  <p className="muted">Chưa có ai dự đoán</p>
+                )}
+              </div>
+              <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
+                {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
+                {sortedPredictors.map((p, i) => {
+                  const raw =
+                    p.full_name ||
+                    p.fullName ||
+                    p.user_full_name ||
+                    p.userFullName ||
+                    p.user_msv ||
+                    p.msv ||
+                    p.userId ||
+                    p.user_id ||
+                    p.userID ||
+                    "";
+                  const clean = raw ? raw.toString().trim() : "";
+                  const firstChar = clean ? clean[0] : String.fromCharCode(65 + (i % 26));
+                  const masked = `${firstChar}${"*".repeat(Math.max(3, (clean || "****").length - 1))}`;
+                  const nameLabel = masked;
+                  return (
+                    <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>{nameLabel}</span>
+                      <span className="muted"></span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
