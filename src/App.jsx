@@ -1356,11 +1356,11 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
                   const masked = fullName
                     ? `${fullName[0]}${"*".repeat(Math.max(3, fullName.length - 1))}`
                     : `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}***`;
-                  const nameLabel = isSameUser(p) ? `${masked} (tôi)` : masked;
+                  const nameLabel = masked;
                   return (
                     <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
                       <span>{nameLabel}</span>
-                      <span className="muted">{p.pick}</span>
+                      <span className="muted"></span>
                     </div>
                   );
                 })}
