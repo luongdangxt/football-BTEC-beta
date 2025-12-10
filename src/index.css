@@ -1679,9 +1679,10 @@ body {
   }
 
   :root {
-    --col-game: clamp(240px, 92vw, 320px);
-    --col-gap: clamp(32px, 12vw, 60px);
-    --col-gap-sm: clamp(26px, 11vw, 50px);
+    /* Cân bằng: đủ rộng cho connector nhưng vẫn lọt màn */
+    --col-game: clamp(220px, 94vw, 300px);
+    --col-gap: clamp(32px, 14vw, 70px);
+    --col-gap-sm: clamp(26px, 12vw, 60px);
     --step: 140px;
     --game-height: 116px;
   }
@@ -1743,10 +1744,11 @@ body {
 
 @media (max-width: 540px) {
   :root {
-    --col-game: clamp(230px, 94vw, 320px);
-    --col-gap: clamp(24px, 10vw, 46px);
-    --col-gap-sm: clamp(20px, 9vw, 40px);
-    --step: 128px;
+    /* Thu gọn hơn để tránh lèm viền nhưng vẫn đủ khoảng cho connector */
+    --col-game: clamp(210px, 96vw, 280px);
+    --col-gap: clamp(26px, 14vw, 64px);
+    --col-gap-sm: clamp(22px, 12vw, 52px);
+    --step: 136px;
     --game-height: 112px;
   }
 
