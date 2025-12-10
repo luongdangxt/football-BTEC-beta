@@ -18,10 +18,10 @@ function useIsNarrow(maxWidth = 640) {
 
 // --- DỮ LIỆU TĨNH CHO CÂY ĐẤU (BRACKET) ---
 const quarterGames = [
-  { id: "g1", label: "Bảng A", slots: ["Đội 1", "Đội 2", "Đội 3"] },
-  { id: "g2", label: "Bảng B", slots: ["Đội 4", "Đội 5", "Đội 6"] },
-  { id: "g3", label: "Bảng C", slots: ["Đội 7", "Đội 8", "Đội 9"] },
-  { id: "g4", label: "Bảng D", slots: ["Đội 10", "Đội 11", "Đội 12"] },
+  { id: "g1", label: "Bảng A", slots: ["Đội Văn Bóng", "TD & AE", "The Fix FC"] },
+  { id: "g2", label: "Bảng B", slots: ["FC Thanh Triều", "Galacticos", "Lũ Quỷ Thành Mân"] },
+  { id: "g3", label: "Bảng C", slots: ["Trẻ Mel", "Max FC", "F+"] },
+  { id: "g4", label: "Bảng D", slots: ["Dừa FC", "All Star BTEC", "Melbourne FPI"] },
 ];
 
 const semiGames = [
