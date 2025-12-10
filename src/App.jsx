@@ -88,6 +88,7 @@ export default function App() {
   const [matchModalTab, setMatchModalTab] = React.useState("info");
   const [user, setUser] = React.useState(null);
   const [users, setUsers] = React.useState([]);
+  const [publicTab, setPublicTab] = React.useState("bracket");
 
   const isAdmin = user?.role === "admin";
 
@@ -211,6 +212,7 @@ export default function App() {
   const handleSectionSelect = (sectionId) => {
     setSelectedSection(sectionId);
     setView("results");
+    setPublicTab("results");
   };
 
   const handleUpdateDay = (dayId, updates) => {
@@ -338,17 +340,69 @@ export default function App() {
             />
           </section>
         ) : (
-          <section className="section-block">
-            <ResultsFeed
-              matchDays={matchDays}
-              selectedLabel={selectedLabel}
-              onSelectMatch={handleOpenMatch}
-              onPredictMatch={handlePredictMatch}
-              onOpenAuth={() => setShowAuth(true)}
-              user={user}
-              onLogout={handleLogout}
-            />
-          </section>
+          <>
+            <div className="page-tabs">
+              <button
+                className={`page-tab ${publicTab === "bracket" ? "is-active" : ""}`}
+                type="button"
+                onClick={() => {
+                  setPublicTab("bracket");
+                  setSelectedSection(null);
+                }}
+              >
+                Cay dau
+              </button>
+              <button
+                className={`page-tab ${publicTab === "results" ? "is-active" : ""}`}
+                type="button"
+                disabled={!selectedSection}
+                onClick={() => setPublicTab("results")}
+              >
+                T?t c? tr?n d?u
+              </button>
+            </div>
+
+            {publicTab === "bracket" && (
+              <section className="section-block">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">Cay dau</p>
+                    <h2>So do giai dau</h2>
+                    <p className="muted" style={{ margin: 0 }}>Bam vao nhanh de xem lich dau tuong ung.</p>
+                  </div>
+                  {selectedLabel && (
+                    <button className="primary-btn ghost-btn" type="button" onClick={() => setSelectedSection(null)}>
+                      Bo chon
+                    </button>
+                  )}
+                </div>
+                <BracketBoard onSectionSelect={handleSectionSelect} />
+              </section>
+            )}
+
+            {publicTab === "results" && (
+              selectedSection ? (
+                <section className="section-block">
+                  <ResultsFeed
+                    matchDays={matchDays}
+                    selectedLabel={selectedLabel}
+                    onSelectMatch={handleOpenMatch}
+                    onPredictMatch={handlePredictMatch}
+                    onOpenAuth={() => setShowAuth(true)}
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                </section>
+              ) : (
+                <section className="section-block">
+                  <div className="results" style={{ textAlign: "center" }}>
+                    <p className="eyebrow">Chua ch?n nhanh</p>
+                    <p className="muted">Hay b m vao m?t nhanh trong cay dau de xem danh s ch tr?n d?u.</p>
+                  </div>
+                </section>
+              )
+            )}
+          </>
         )}
 
         <AuthModal 
