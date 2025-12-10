@@ -8,9 +8,9 @@
   --muted: #9fbdad;
   --accent: #5bed9f;
   --accent-2: #d7f55a;
-  --col-game: 260px;
-  --col-gap: 80px;
-  --col-gap-sm: 40px;
+  --col-game: 220px;
+  --col-gap: 60px;
+  --col-gap-sm: 32px;
   --line: rgba(91, 237, 159, 0.8);
   --stroke: rgba(255, 255, 255, 0.08);
   --shadow: 0 18px 90px rgba(0, 0, 0, 0.35);
@@ -21,6 +21,14 @@
   --curve: 16px;
   --stroke-w: 2px;
   font-family: 'Space Grotesk', 'Manrope', system-ui, -apple-system, sans-serif;
+}
+
+@media (min-width: 1400px) {
+  :root {
+    --col-game: 240px;
+    --col-gap: 90px;
+    --col-gap-sm: 60px;
+  }
 }
 
 *,
@@ -57,7 +65,7 @@ body {
 .shell {
   position: relative;
   z-index: 1;
-  max-width: 1500px;
+  max-width: min(1900px, 96vw);
   margin: 0 auto;
   padding: 26px 16px 40px;
 }
