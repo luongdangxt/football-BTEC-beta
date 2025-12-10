@@ -538,6 +538,8 @@ function BracketBoard({ onSectionSelect }) {
           <GameCard game={semiGames[1]} variant="semi" extraClass="pos-s2" onClick={() => onSectionSelect("g6")} />
           <GameCard game={finalGame} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
           <ChampionCard extraClass="pos-champion" />
+          <Connector className="connector connector-gq-top" mode="cross" />
+          <Connector className="connector connector-gq-bottom" mode="cross" />
           <Connector className="connector connector-q12" mode="q" />
           <Connector className="connector connector-q34" mode="q" />
           <Connector className="connector connector-semis" mode="semi" />
@@ -1088,12 +1090,35 @@ function ChampionCard({ extraClass }) {
 }
 
 function Connector({ className, mode }) {
-  // SVG path logic gi? nguyên
-  const isSemi = mode === "semi"; const isFinal = mode === "final";
-  const viewBox = isSemi ? "0 0 140 400" : isFinal ? "0 0 120 220" : "0 0 140 200";
-  let path = isSemi ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200" :
-             isFinal ? "M0 110 C 30 110 60 110 120 110" : "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
-  return <div className={className}><svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none"><path className="connector-path" d={path} /></svg></div>;
+  const isSemi = mode === "semi";
+  const isFinal = mode === "final";
+  const isGroup = mode === "group";
+  const isCross = mode === "cross";
+  const viewBox = isSemi
+    ? "0 0 140 400"
+    : isFinal
+    ? "0 0 120 220"
+    : isCross
+    ? "0 0 140 200"
+    : isGroup
+    ? "0 0 140 120"
+    : "0 0 140 200";
+  let path = isSemi
+    ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200"
+    : isFinal
+    ? "M0 110 C 30 110 60 110 120 110"
+    : isCross
+    ? "M0 40 C 32 40 52 70 70 100 C 88 130 108 160 140 160 M0 160 C 32 160 52 130 70 100 C 88 70 108 40 140 40"
+    : isGroup
+    ? "M0 60 C 30 60 60 60 140 60"
+    : "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
+  return (
+    <div className={className}>
+      <svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none">
+        <path className="connector-path" d={path} />
+      </svg>
+    </div>
+  );
 }
 
 function MatchCard({ match, onSelect, onPredict }) {
@@ -1450,6 +1475,7 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
     </div>
   );
 }
+
 
 
 
