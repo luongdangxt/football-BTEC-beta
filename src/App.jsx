@@ -3,6 +3,9 @@ import { jwtDecode } from "jwt-decode"; // Cần cài: npm install jwt-decode
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
+import logoLeft from "./images/image2.jpg";
+import logoCenter from "./images/Logo Bong Da.png";
+import logoRight from "./images/image1.jpg";
 
 // Simple breakpoint hook for responsive tweaks
 function useIsNarrow(maxWidth = 640) {
@@ -421,12 +424,10 @@ export default function App() {
       <main className="shell">
         <header className="hero">
           <div className="hero-main">
-            <div className="badge">
-              <div className="badge-ball" />
-              <div className="badge-text">
-                <span className="badge-title">FOOTBALL</span>
-                <span className="badge-sub">TOURNAMENT</span>
-              </div>
+            <div className="hero-logos">
+              <img src={logoLeft} alt="Tournament partner logo left" className="hero-logo" />
+              <img src={logoCenter} alt="Tournament main logo" className="hero-logo hero-logo--main" />
+              <img src={logoRight} alt="Tournament partner logo right" className="hero-logo" />
             </div>
             <div className="hero-text">
               <h2>BTEC FOOTBALL CHAMPIONSHIP 2025</h2>
@@ -1719,7 +1720,6 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
     </div>
   );
 }
-
 
 
 
