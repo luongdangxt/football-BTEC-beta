@@ -10,6 +10,9 @@ const matchApi = {
   getMatchDetail(id) {
     return axiosClient.get(`/api/matches/${id}`);
   },
+  getLeaderboard() {
+    return axiosClient.get('/api/leaderboard');
+  },
   predict(data) {
     return axiosClient.post('/api/predict', data);
   },
