@@ -17,13 +17,19 @@ function useIsNarrow(maxWidth = 640) {
 
 
 // --- D? LI?U TINH CHO CÂY Ð?U (BRACKET) ---
+const groupColors = {
+  A: "#5bed9f",
+  B: "#4aa3ff",
+  C: "#f5c244",
+  D: "#f36c6c",
+};
+
 const quarterGames = [
-  { id: "g1", label: "B?ng A", slots: ["Ð?i Van Bo´ng", "TD & AE", "The Fix FC"] },
-  { id: "g2", label: "B?ng B", slots: ["FC Thanh Triê`u", "Galacticos", "Lu~ Quy? Tha`nh Mân"] },
+  { id: "g1", label: "B?ng A", slots: ["D?i Van Bo'ng", "TD & AE", "The Fix FC"] },
+  { id: "g2", label: "B?ng B", slots: ["FC Thanh Tri^`u", "Galacticos", "Lu~ Quy? Tha`nh Mƭn"] },
   { id: "g3", label: "B?ng C", slots: ["Tre? Mel", "Max FC", "F+"] },
   { id: "g4", label: "B?ng D", slots: ["Du`a FC", "All Star BTEC", "Melbourne FPI"] },
 ];
-
 const knockoutQuarterGames = [
   { id: "qf1", label: "Tu ket 1", slots: ["Nhat A", "Nhi B"] },
   { id: "qf2", label: "Tu ket 2", slots: ["Nhi A", "Nhat B"] },
@@ -52,6 +58,73 @@ const sectionMatches = {
   g7: { label: "Chung k?t" },
 };
 
+
+// Mock data (fallback) d— xem UI khi API r?ng / l?i
+const mockMatches = [
+  {
+    id: "m1",
+    competition: "Vong bang A",
+    status: "ft",
+    date: "2025-01-10",
+    start_time: "2025-01-10T09:00:00Z",
+    kickoff: "16:00",
+    minute: 90,
+    is_locked: true,
+    team_a: "Doi Van Bo'ng",
+    team_a_color: groupColors.A,
+    score_a: 2,
+    team_b: "TD & AE",
+    team_b_color: groupColors.B,
+    score_b: 1,
+    events: [],
+    predictions: [
+      { full_name: "An Nguyen", pick: "2-1", pick_a: 2, pick_b: 1 },
+      { full_name: "Bui Minh", pick: "1-1", pick_a: 1, pick_b: 1 },
+    ],
+  },
+  {
+    id: "m2",
+    competition: "Vong bang B",
+    status: "ft",
+    date: "2025-01-10",
+    start_time: "2025-01-10T11:00:00Z",
+    kickoff: "18:00",
+    minute: 90,
+    is_locked: true,
+    team_a: "FC Thanh Trieu",
+    team_a_color: groupColors.B,
+    score_a: 0,
+    team_b: "Galacticos",
+    team_b_color: groupColors.C,
+    score_b: 3,
+    events: [],
+    predictions: [
+      { full_name: "Tran Hoa", pick: "0-2", pick_a: 0, pick_b: 2 },
+      { full_name: "An Nguyen", pick: "1-3", pick_a: 1, pick_b: 3 },
+    ],
+  },
+  {
+    id: "m3",
+    competition: "Ban ket",
+    status: "upcoming",
+    date: "2025-01-11",
+    start_time: "2025-01-11T09:00:00Z",
+    kickoff: "16:00",
+    minute: null,
+    is_locked: false,
+    team_a: "Nhat A",
+    team_a_color: groupColors.A,
+    score_a: null,
+    team_b: "Nhat B",
+    team_b_color: groupColors.B,
+    score_b: null,
+    events: [],
+    predictions: [
+      { full_name: "An Nguyen", pick: "2-0", pick_a: 2, pick_b: 0 },
+      { full_name: "Le Thu", pick: "1-2", pick_a: 1, pick_b: 2 },
+    ],
+  },
+];
 const transformMatchesToDays = (matches) => {
   if (!Array.isArray(matches)) return [];
 
@@ -63,7 +136,8 @@ const transformMatchesToDays = (matches) => {
     acc[dateKey].push({
       id: match.id,
       competition: match.competition,
-      status: match.is_locked ? "ft" : (match.status || "upcoming"),
+      // Ưu tiên trạng thái lưu trong DB; chỉ fallback khi không có status
+      status: match.status || (match.is_locked ? "ft" : "upcoming"),
       events: match.events || [],
       
       // QUAN TR?NG: Uu tiên hi?n th? chu?i kickoff t? DB (VD: "05:00")
@@ -105,8 +179,16 @@ export default function App() {
 
   // Fetch match list and hydrate events from detail API so admin view stays in sync
   const fetchMatchesWithEvents = React.useCallback(async () => {
+    let matches = [];
     try {
-      const matches = await matchApi.getAllMatches();
+      matches = await matchApi.getAllMatches();
+    } catch (error) {
+      console.error("Failed to load matches:", error);
+      setMatchDays(transformMatchesToDays(mockMatches));
+      return;
+    }
+
+    try {
       const matchesWithEvents = await Promise.all(
         matches.map(async (match) => {
           try {
@@ -119,13 +201,15 @@ export default function App() {
             };
           } catch (error) {
             console.error("Failed to load match detail:", match.id, error);
-            return { ...match, events: [] };
+            return { ...match, events: [], predictions: match.predictions || [] };
           }
         })
       );
-      setMatchDays(transformMatchesToDays(matchesWithEvents));
+      const data = matchesWithEvents.length > 0 ? matchesWithEvents : mockMatches;
+      setMatchDays(transformMatchesToDays(data));
     } catch (error) {
-      console.error("Failed to load matches:", error);
+      console.error("Failed to hydrate matches:", error);
+      setMatchDays(transformMatchesToDays(mockMatches));
     }
   }, []);
 
@@ -371,6 +455,13 @@ export default function App() {
               >
                 T?t c? tr?n d?u
               </button>
+              <button
+                className={`page-tab ${publicTab === "predictions" ? "is-active" : ""}`}
+                type="button"
+                onClick={() => setPublicTab("predictions")}
+              >
+                BXH d? doan
+              </button>
             </div>
 
             {publicTab === "bracket" && (
@@ -412,6 +503,11 @@ export default function App() {
                   </div>
                 </section>
               )
+            )}
+            {publicTab === "predictions" && (
+              <section className="section-block">
+                <PredictionLeaderboard matchDays={matchDays} />
+              </section>
             )}
           </>
         )}
@@ -647,6 +743,103 @@ function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMa
         ))}
       </div>
     </section>
+  );
+}
+
+function PredictionLeaderboard({ matchDays = [] }) {
+  const leaderboard = React.useMemo(() => {
+    const scoreOutcome = (a, b) => (a > b ? "home" : a < b ? "away" : "draw");
+    const parsePick = (pick) => {
+      if (!pick) return null;
+      const parts = pick.split(/[-:x]/).map((s) => s.trim());
+      if (parts.length < 2) return null;
+      const sa = Number(parts[0]);
+      const sb = Number(parts[1]);
+      if (Number.isNaN(sa) || Number.isNaN(sb)) return null;
+      return { sa, sb };
+    };
+
+    const tally = {};
+    matchDays.forEach(day => {
+      (day.matches || []).forEach(m => {
+        const status = m.status || (m.is_locked ? "ft" : "upcoming");
+        const hasResult =
+          (status === "ft" || m.is_locked) &&
+          m.home &&
+          m.away &&
+          m.home.score != null &&
+          m.away.score != null;
+        if (!hasResult) return;
+        const actualA = Number(m.home.score);
+        const actualB = Number(m.away.score);
+        if (Number.isNaN(actualA) || Number.isNaN(actualB)) return;
+        const actualOutcome = scoreOutcome(actualA, actualB);
+
+        const predictors = m.predictions || m.predictors || [];
+        predictors.forEach(p => {
+          const name =
+            p.full_name ||
+            p.fullName ||
+            p.user_full_name ||
+            p.userFullName ||
+            p.user_msv ||
+            p.msv ||
+            "An danh";
+          const id =
+            (p.user_msv || p.msv || p.userId || p.user_id || p.userID || name || "anon")
+              .toString()
+              .trim()
+              .toLowerCase();
+          const key = id || name || "anon";
+          if (!tally[key]) tally[key] = { name: name || "An danh", correct: 0, total: 0, points: 0 };
+          const pick = parsePick(p.pick || p.prediction || p.score_pred);
+          tally[key].total += 1;
+          if (!pick) return;
+          const predictedOutcome = scoreOutcome(p.pick_a ?? pick.sa, p.pick_b ?? pick.sb);
+          const exact = pick.sa === actualA && pick.sb === actualB;
+          const outcomeMatch = predictedOutcome === actualOutcome;
+          if (exact) {
+            tally[key].correct += 1;
+            tally[key].points += 3;
+          } else if (outcomeMatch) {
+            tally[key].points += 1;
+          }
+        });
+      });
+    });
+    return Object.values(tally)
+      .sort((a, b) => b.points - a.points || b.correct - a.correct);
+  }, [matchDays]);
+
+  return (
+    <div className="results">
+      <div className="results-header">
+        <div>
+          <p className="eyebrow">Bang x?p h?ng</p>
+          <h2>Top d? doán chính xác</h2>
+          <p className="muted" style={{ margin: 0 }}>+3 đi?m d? doán ?�ng t? s?, +1 đi?m ?�ng k?t qu?.</p>
+        </div>
+      </div>
+      {leaderboard.length === 0 ? (
+        <div className="results-empty">Chua co d? li?u d? doán.</div>
+      ) : (
+        <div className="match-list">
+          {leaderboard.map((item, idx) => (
+            <div key={item.name + idx} className="match-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="status-pill status-pill--upcoming" style={{ minWidth: 32, justifyContent: "center" }}>{idx + 1}</span>
+                <strong>{item.name}</strong>
+              </div>
+              <div className="muted" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span>Đi?m: <strong>{item.points}</strong></span>
+                <span>|</span>
+                <span>Đúng: {item.correct} / {item.total}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1475,6 +1668,11 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
     </div>
   );
 }
+
+
+
+
+
 
 
 
