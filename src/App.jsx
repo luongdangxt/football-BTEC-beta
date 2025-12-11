@@ -174,6 +174,7 @@ export default function App() {
   const [user, setUser] = React.useState(null);
   const [users, setUsers] = React.useState([]);
   const [publicTab, setPublicTab] = React.useState("bracket");
+  const [leaderboard, setLeaderboard] = React.useState([]);
 
   const isAdmin = user?.role === "admin";
 
@@ -213,10 +214,28 @@ export default function App() {
     }
   }, []);
 
-  // 1. Fetch d? li?u tr?n d?u khi load trang
+  const fetchLeaderboard = React.useCallback(async () => {
+    try {
+      const data = await matchApi.getLeaderboard();
+      setLeaderboard(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load leaderboard:", error);
+      setLeaderboard([]);
+    }
+  }, []);
+
+  // 1. Fetch dữ liệu trận đấu và bảng điểm khi load trang
   React.useEffect(() => {
     fetchMatchesWithEvents();
-  }, [fetchMatchesWithEvents]);
+    fetchLeaderboard();
+  }, [fetchMatchesWithEvents, fetchLeaderboard]);
+
+  // Refresh leaderboard when mở tab BXH
+  React.useEffect(() => {
+    if (publicTab === "predictions" && leaderboard.length === 0) {
+      fetchLeaderboard();
+    }
+  }, [publicTab, leaderboard.length, fetchLeaderboard]);
 
   const loadUsers = React.useCallback(async () => {
     try {
@@ -273,6 +292,8 @@ export default function App() {
             }
             return prev;
           });
+
+          fetchLeaderboard();
         }
       } catch (err) {
         console.error("WS Error:", err);
@@ -280,7 +301,7 @@ export default function App() {
     };
 
     return () => ws.close();
-  }, []);
+  }, [fetchLeaderboard]);
 
   // 3. Check login state
   React.useEffect(() => {
@@ -314,8 +335,11 @@ export default function App() {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
-  // Helper reload toàn b? danh sách tr?n t? API
-  const reloadMatches = React.useCallback(() => fetchMatchesWithEvents(), [fetchMatchesWithEvents]);
+  // Helper reload toàn bộ danh sách trận và bảng điểm từ API
+  const reloadMatches = React.useCallback(() => {
+    fetchMatchesWithEvents();
+    fetchLeaderboard();
+  }, [fetchMatchesWithEvents, fetchLeaderboard]);
 
   // Logic thêm tr?n m?i (ch? update UI t?m th?i, th?c t? API dã g?i xong m?i reload list)
   const handleAddMatch = (dayId, match) => {
@@ -506,7 +530,7 @@ export default function App() {
             )}
             {publicTab === "predictions" && (
               <section className="section-block">
-                <PredictionLeaderboard matchDays={matchDays} />
+                <PredictionLeaderboard matchDays={matchDays} leaderboardData={leaderboard} />
               </section>
             )}
           </>
@@ -746,8 +770,17 @@ function ResultsFeed({ matchDays = [], selectedLabel, onSelectMatch, onPredictMa
   );
 }
 
-function PredictionLeaderboard({ matchDays = [] }) {
-  const leaderboard = React.useMemo(() => {
+function PredictionLeaderboard({ matchDays = [], leaderboardData = [] }) {
+  const formatTimeGap = (seconds) => {
+    if (!seconds || seconds <= 0) return "0m";
+    const mins = Math.floor(seconds / 60);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    const rest = mins % 60;
+    return rest ? `${hours}h ${rest}m` : `${hours}h`;
+  };
+
+  const fallbackLeaderboard = React.useMemo(() => {
     const scoreOutcome = (a, b) => (a > b ? "home" : a < b ? "away" : "draw");
     const parsePick = (pick) => {
       if (!pick) return null;
@@ -757,6 +790,18 @@ function PredictionLeaderboard({ matchDays = [] }) {
       const sb = Number(parts[1]);
       if (Number.isNaN(sa) || Number.isNaN(sb)) return null;
       return { sa, sb };
+    };
+    const calcScore = (pHome, pAway, rHome, rAway) => {
+      const result = (h, a) => (h > a ? "H" : h < a ? "A" : "D");
+      const resP = result(pHome, pAway);
+      const resR = result(rHome, rAway);
+      const diffSum = Math.abs(pHome - rHome) + Math.abs(pAway - rAway);
+      if (pHome === rHome && pAway === rAway) return 100;
+      if (resP === resR && (pHome - pAway) === (rHome - rAway)) return 70;
+      if (resP === resR) return 50;
+      if (diffSum === 1) return 30;
+      if (diffSum === 2) return 10;
+      return 0;
     };
 
     const tally = {};
@@ -773,7 +818,6 @@ function PredictionLeaderboard({ matchDays = [] }) {
         const actualA = Number(m.home.score);
         const actualB = Number(m.away.score);
         if (Number.isNaN(actualA) || Number.isNaN(actualB)) return;
-        const actualOutcome = scoreOutcome(actualA, actualB);
 
         const predictors = m.predictions || m.predictors || [];
         predictors.forEach(p => {
@@ -784,56 +828,75 @@ function PredictionLeaderboard({ matchDays = [] }) {
             p.userFullName ||
             p.user_msv ||
             p.msv ||
-            "An danh";
+            "Ẩn danh";
           const id =
             (p.user_msv || p.msv || p.userId || p.user_id || p.userID || name || "anon")
               .toString()
               .trim()
               .toLowerCase();
           const key = id || name || "anon";
-          if (!tally[key]) tally[key] = { name: name || "An danh", correct: 0, total: 0, points: 0 };
+          if (!tally[key]) tally[key] = { name: name || "Ẩn danh", total: 0, points: 0, exact: 0, totalTimeSeconds: null };
           const pick = parsePick(p.pick || p.prediction || p.score_pred);
-          tally[key].total += 1;
           if (!pick) return;
-          const predictedOutcome = scoreOutcome(p.pick_a ?? pick.sa, p.pick_b ?? pick.sb);
-          const exact = pick.sa === actualA && pick.sb === actualB;
-          const outcomeMatch = predictedOutcome === actualOutcome;
-          if (exact) {
-            tally[key].correct += 1;
-            tally[key].points += 3;
-          } else if (outcomeMatch) {
-            tally[key].points += 1;
-          }
+          tally[key].total += 1;
+          const points = calcScore(p.pick_a ?? pick.sa, p.pick_b ?? pick.sb, actualA, actualB);
+          tally[key].points += points;
+          if (points === 100) tally[key].exact += 1;
         });
       });
     });
     return Object.values(tally)
-      .sort((a, b) => b.points - a.points || b.correct - a.correct);
+      .sort((a, b) => b.points - a.points || b.exact - a.exact);
   }, [matchDays]);
+
+  const displayLeaderboard = React.useMemo(() => {
+    if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
+      return leaderboardData.map((item) => ({
+        name: item.full_name || item.user_msv || "Ẩn danh",
+        points: item.total_points ?? item.points ?? 0,
+        total: item.prediction_count ?? item.total ?? null,
+        totalTimeSeconds: item.total_time_seconds ?? null,
+        rank: item.rank,
+      }));
+    }
+    return fallbackLeaderboard;
+  }, [leaderboardData, fallbackLeaderboard]);
 
   return (
     <div className="results">
       <div className="results-header">
         <div>
-          <p className="eyebrow">Bang x?p h?ng</p>
-          <h2>Top d? doán chính xác</h2>
-          <p className="muted" style={{ margin: 0 }}>+3 đi?m d? doán ?�ng t? s?, +1 đi?m ?�ng k?t qu?.</p>
+          <p className="eyebrow">Bảng xếp hạng</p>
+          <h2>Top dự đoán chính xác</h2>
+          <p className="muted" style={{ margin: 0 }}>
+            Điểm: 100 (đúng tỷ số), 70 (đúng đội thắng + hiệu số), 50 (đúng 1X2), 30 (lệch 1 bàn), 10 (lệch 2 bàn). Hòa điểm: ai dự gần giờ khóa hơn xếp trước.
+          </p>
         </div>
       </div>
-      {leaderboard.length === 0 ? (
-        <div className="results-empty">Chua co d? li?u d? doán.</div>
+      {displayLeaderboard.length === 0 ? (
+        <div className="results-empty">Chưa có dữ liệu dự đoán.</div>
       ) : (
         <div className="match-list">
-          {leaderboard.map((item, idx) => (
-            <div key={item.name + idx} className="match-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {displayLeaderboard.map((item, idx) => (
+            <div key={`${item.name}-${item.rank || idx}`} className="match-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="status-pill status-pill--upcoming" style={{ minWidth: 32, justifyContent: "center" }}>{idx + 1}</span>
+                <span className="status-pill status-pill--upcoming" style={{ minWidth: 32, justifyContent: "center" }}>{item.rank || idx + 1}</span>
                 <strong>{item.name}</strong>
               </div>
               <div className="muted" style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <span>Đi?m: <strong>{item.points}</strong></span>
-                <span>|</span>
-                <span>Đúng: {item.correct} / {item.total}</span>
+                <span>Điểm: <strong>{item.points}</strong></span>
+                {item.total != null && (
+                  <>
+                    <span>|</span>
+                    <span>Lượt dự: {item.total}</span>
+                  </>
+                )}
+                {item.totalTimeSeconds != null && (
+                  <>
+                    <span>|</span>
+                    <span>Thời gian tie-break: {formatTimeGap(item.totalTimeSeconds)}</span>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -1668,13 +1731,6 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose }) {
     </div>
   );
 }
-
-
-
-
-
-
-
 
 
 

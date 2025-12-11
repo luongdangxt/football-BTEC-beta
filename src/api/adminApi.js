@@ -23,19 +23,33 @@ const adminApi = {
     return axiosClient.post('/api/matches', payload);
   },
 
-  updateMatch(matchId, matchData) {
-    const payload = {
+  async updateMatch(matchId, matchData) {
+    // 1) Cập nhật thông tin chung
+    const infoPayload = {
       competition: matchData.competition,
       team_a: matchData.home.name,
       team_b: matchData.away.name,
       ...(matchData.status && { status: matchData.status }),
       ...(matchData.minute && { minute: matchData.minute }),
-      // Gửi string y nguyên nếu có sửa
       ...(matchData.date && { date: matchData.date }),
       ...(matchData.kickoff && { kickoff: matchData.kickoff }),
     };
 
-    return axiosClient.put(`/api/matches/${matchId}/info`, payload);
+    const calls = [];
+    calls.push(axiosClient.put(`/api/matches/${matchId}/info`, infoPayload));
+
+    // 2) Nếu có nhập tỷ số, gọi endpoint riêng để broadcast + ghi DB
+    const hasScoreA = matchData.home.score !== undefined && matchData.home.score !== null && matchData.home.score !== "";
+    const hasScoreB = matchData.away.score !== undefined && matchData.away.score !== null && matchData.away.score !== "";
+    if (hasScoreA && hasScoreB) {
+      calls.push(axiosClient.put(`/api/matches/${matchId}/score`, {
+        score_a: Number(matchData.home.score),
+        score_b: Number(matchData.away.score),
+      }));
+    }
+
+    const results = await Promise.all(calls);
+    return results[results.length - 1];
   },
 
   deleteMatch(matchId) {
