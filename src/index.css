@@ -168,13 +168,14 @@ body {
 }
 
 .page-tabs {
-  display: inline-flex;
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--stroke);
-  border-radius: 12px;
-  padding: 4px;
-  margin: 4px 0 16px;
+  border-radius: 14px;
+  padding: 8px;
+  margin: 0 0 16px;
   box-shadow: var(--shadow);
 }
 
@@ -192,14 +193,19 @@ body {
 }
 
 .page-tab {
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   color: var(--muted);
   font-weight: 800;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .page-tab.is-active {
@@ -1820,6 +1826,18 @@ body {
 }
 
 @media (max-width: 640px) {
+  .page-tabs {
+    gap: 6px;
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  .page-tab {
+    padding: 10px 8px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
   .match-card {
     padding: 12px 10px;
   }

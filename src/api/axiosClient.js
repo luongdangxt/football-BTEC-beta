@@ -2,8 +2,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  // baseURL: 'http://localhost:8000',
-  baseURL: 'https://api-webbongda.onrender.com', // Đổi port nếu server chạy port khác
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },

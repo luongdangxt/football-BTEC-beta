@@ -258,7 +258,8 @@ export default function App() {
   // 2. Kết nối WebSocket để nhận điểm số Realtime
   React.useEffect(() => {
     // Lưu ý: Port 8000 là port của FastAPI
-    const ws = new WebSocket("wss://api-webbongda.onrender.com/ws/live-scores");
+    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || "ws://localhost:8000";
+    const ws = new WebSocket(`${wsBaseUrl}/ws/live-scores`);
 
     ws.onopen = () => console.log("Connected to WebSocket Live Scores");
 
@@ -470,12 +471,11 @@ export default function App() {
                   setSelectedSection(null);
                 }}
               >
-                Cay dau
+                Giải đấu
               </button>
               <button
                 className={`page-tab ${publicTab === "results" ? "is-active" : ""}`}
                 type="button"
-                disabled={!selectedSection}
                 onClick={() => setPublicTab("results")}
               >
                 Tất cả trận đấu
@@ -493,13 +493,13 @@ export default function App() {
               <section className="section-block">
                 <div className="section-heading">
                   <div>
-                    <p className="eyebrow">Cay dau</p>
-                    <h2>So do giai dau</h2>
-                    <p className="muted" style={{ margin: 0 }}>Bam vao nhanh de xem lich dau tuong ung.</p>
+                    <p className="eyebrow">Giải đấu</p>
+                    <h2>Sơ đồ giải đấu</h2>
+                    <p className="muted" style={{ margin: 0 }}>Ấn vào nhánh để xem lịch đấu tương ứng.</p>
                   </div>
                   {selectedLabel && (
                     <button className="primary-btn ghost-btn" type="button" onClick={() => setSelectedSection(null)}>
-                      Bo chon
+                      Bỏ chọn
                     </button>
                   )}
                 </div>
