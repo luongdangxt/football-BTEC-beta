@@ -691,7 +691,6 @@ function AppContent() {
                 type="button"
                 onClick={() => {
                   setPublicTab("results");
-                  setAutoScrollResults(true);
                 }}
               >
                 Tất cả trận đấu
