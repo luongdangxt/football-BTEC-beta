@@ -2225,18 +2225,28 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
               {hasPredicted && myPrediction && (
                 <div
                   style={{
-                    padding: "10px 12px",
-                    background: "rgba(91, 237, 159, 0.08)",
-                    borderRadius: 10,
+                    padding: "20px",
+                    background: "linear-gradient(135deg, rgba(91, 237, 159, 0.1) 0%, rgba(91, 237, 159, 0.05) 100%)",
+                    borderRadius: 16,
                     border: "1px solid rgba(91, 237, 159, 0.3)",
-                    fontWeight: 700,
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    gap: "8px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
                   }}
                 >
-                  <span className="muted" style={{ fontWeight: 600 }}>Dự đoán của tôi</span>
-                  <span>{myPrediction.pick}</span>
+                  <div className="eyebrow" style={{ color: "#5bed9f", fontSize: "11px", letterSpacing: "1px" }}>DỰ ĐOÁN CỦA BẠN</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px", fontSize: "32px", fontWeight: "800", textShadow: "0 2px 10px rgba(91, 237, 159, 0.3)" }}>
+                    <span style={{ color: "#fff" }}>{myPrediction.pick.split('-')[0]}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "20px" }}>-</span>
+                    <span style={{ color: "#fff" }}>{myPrediction.pick.split('-')[1]}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "12px", width: "100%", alignItems: "center", textAlign: "center", marginTop: "4px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{displayMatch.team_a}</span>
+                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>vs</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{displayMatch.team_b}</span>
+                  </div>
                 </div>
               )}
               {!hasPredicted && (
