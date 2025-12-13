@@ -120,12 +120,40 @@ const groupColors = {
   D: "#f36c6c",
 };
 
+const TEAMS = [
+  { name: "TBD", logo: "" },
+  { name: "All Star BTEC", logo: "" },
+  { name: "Dừa FC", logo: "" },
+  { name: "F+", logo: "" },
+  { name: "FC Thanh Triều", logo: "" },
+  { name: "Galacticos", logo: "" },
+  { name: "Lũ Quỷ Thành Mân", logo: "" },
+  { name: "Max FC", logo: "" },
+  { name: "Melbourne FPI", logo: "" },
+  { name: "The Fix FC", logo: "" },
+  { name: "Trẻ Mel", logo: "" },
+  { name: "TĐ&AE", logo: "" },
+  { name: "Đội Văn Bóng", logo: "" },
+];
+
+const COMPETITION_OPTIONS = [
+  "Bảng A - Sân 1", "Bảng A - Sân 2", "Bảng A - Sân 3", "Bảng A - Sân 4",
+  "Bảng B - Sân 1", "Bảng B - Sân 2", "Bảng B - Sân 3", "Bảng B - Sân 4",
+  "Bảng C - Sân 1", "Bảng C - Sân 2", "Bảng C - Sân 3", "Bảng C - Sân 4",
+  "Bảng D - Sân 1", "Bảng D - Sân 2", "Bảng D - Sân 3", "Bảng D - Sân 4",
+  "Tứ kết 1 - Sân 1", "Tứ kết 2 - Sân 2", "Tứ kết 3 - Sân 3", "Tứ kết 4 - Sân 4",
+  "Bán kết 1 - Sân 1", "Bán kết 2 - Sân 2",
+  "Tranh hạng 3 - Sân 1",
+  "Chung kết - Sân 1"
+];
+
 const quarterGames = [
-  { id: "g1", label: "Bảng A", slots: ["Đội Văn Bổng", "TD & AE", "The Fix FC"] },
-  { id: "g2", label: "Bảng B", slots: ["FC Thanh Triều", "Galacticos", "Lữ Quý Thành Mẫn"] },
+  { id: "g1", label: "Bảng A", slots: ["Đội Văn Bóng", "TĐ&AE", "The Fix FC"] },
+  { id: "g2", label: "Bảng B", slots: ["FC Thanh Triều", "Galacticos", "Lũ Quỷ Thành Mân"] },
   { id: "g3", label: "Bảng C", slots: ["Trẻ Mel", "Max FC", "F+"] },
   { id: "g4", label: "Bảng D", slots: ["Dừa FC", "All Star BTEC", "Melbourne FPI"] },
 ];
+
 const knockoutQuarterGames = [
   { id: "qf1", label: "Tứ kết 1", slots: ["Nhất A", "Nhì B"] },
   { id: "qf2", label: "Tứ kết 2", slots: ["Nhất B", "Nhì A"] },
@@ -1343,6 +1371,7 @@ function AdminPanel({ matchDays = [], users = [], teams = [], onRefreshUsers, on
                       <AdminMatchCard
                         key={match.id}
                         match={match}
+                        teams={teams}
                         onToast={showToast}
                         onUpdate={(payload) => {
                           import('./api/adminApi').then(mod => {
@@ -1500,10 +1529,10 @@ function AdminPanel({ matchDays = [], users = [], teams = [], onRefreshUsers, on
     </section>
   );
 }
-function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
+function AdminMatchCard({ match, teams, onUpdate, onDelete, onRefresh, onToast }) {
   const isNarrow = useIsNarrow(768);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "" });
+  const [eventForm, setEventForm] = React.useState({ team_side: "a", player: "", minute: "", jersey_number: "" });
   const statusLabel = match.status === "live" ? "Đang diễn ra" : match.status === "ft" ? "Kết thúc" : "Sắp diễn ra";
   const eventsA = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(match.events) ? match.events.filter(ev => ev.team_side === "b") : [];
@@ -1533,10 +1562,11 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
       await matchApi.addEvent(match.id, {
         player: eventForm.player,
         minute: eventForm.minute,
+        jersey_number: eventForm.jersey_number,
         type: "goal",
         team_side: eventForm.team_side,
       });
-      setEventForm({ team_side: "a", player: "", minute: "" });
+      setEventForm({ team_side: "a", player: "", minute: "", jersey_number: "" });
       onRefresh?.();
     } catch (err) {
       onToast?.(err.response?.data?.detail || err.message, "error");
@@ -1560,6 +1590,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
       {isEditing ? (
         <AdminMatchForm
           initialMatch={match}
+          teams={teams}
           submitLabel="Lưu thay đổi"
           onSubmit={(payload) => {
             onUpdate?.(payload);
@@ -1608,7 +1639,9 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
                       wordBreak: "break-word",
                     }}
                   >
-                    <span style={{ wordBreak: "break-word", justifySelf: "end" }}>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word", justifySelf: "end" }}>
+                      {ev.player || "?"} {ev.jersey_number ? `(#${ev.jersey_number})` : ""}
+                    </span>
                     <span className="eyebrow" style={{ justifySelf: "end" }}>{ev.minute || "?"}</span>
                   </li>
                 ))}
@@ -1632,7 +1665,9 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
                     }}
                   >
                     <span className="eyebrow">{ev.minute || "?"}</span>
-                    <span style={{ wordBreak: "break-word" }}>{ev.player || "?"}</span>
+                    <span style={{ wordBreak: "break-word" }}>
+                      {ev.player || "?"} {ev.jersey_number ? `(#${ev.jersey_number})` : ""}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -1643,7 +1678,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
         <form className="admin-event-form" onSubmit={handleAddEvent}>
           <div className="admin-form-row">
             <label className="field">
-              <span>Ð?i</span>
+              <span>Đội</span>
               <select
                 className="field-select"
                 value={eventForm.team_side}
@@ -1652,6 +1687,16 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
                 <option value="a">{match.home?.name || "Đội A"}</option>
                 <option value="b">{match.away?.name || "Đội B"}</option>
               </select>
+            </label>
+            <label className="field">
+              <span>Số áo</span>
+              <input
+                type="text"
+                value={eventForm.jersey_number}
+                onChange={(e) => setEventForm((p) => ({ ...p, jersey_number: e.target.value }))}
+                placeholder="10"
+                style={{ width: "60px" }}
+              />
             </label>
             <label className="field">
               <span>Cầu thủ</span>
@@ -1765,7 +1810,13 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", teams = [], onSubmi
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
       <div className="admin-form-row" style={rowStyle}>
-        <label className="field"><span>Giải đấu</span><input type="text" {...bind("competition")} /></label>
+        <label className="field">
+          <span>Giải đấu</span>
+          <select className="field-select" {...bind("competition")}>
+            <option value="">-- Chọn trận đấu --</option>
+            {COMPETITION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </label>
         <label className="field"><span>Ngày thi đấu</span><input type="date" {...bind("date")} required /></label>
         <label className="field"><span>Giờ (HH:mm)</span><input type="time" {...bind("kickoff")} required /></label>
         <label className="field">
@@ -1786,10 +1837,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", teams = [], onSubmi
               {teams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
             </select>
           </label>
-          <div className="logo-upload">
-            <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} /></label>
-            {form.homeLogo && <div className="logo-preview"><img src={form.homeLogo} alt="" /></div>}
-          </div>
+          {/* Logo automatically handled */}
           <label className="field"><span>Tỷ số</span><input type="number" {...bind("homeScore")} /></label>
         </div>
         <div className="admin-team-col">
@@ -1801,10 +1849,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", teams = [], onSubmi
               {teams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
             </select>
           </label>
-          <div className="logo-upload">
-            <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} /></label>
-            {form.awayLogo && <div className="logo-preview"><img src={form.awayLogo} alt="" /></div>}
-          </div>
+          {/* Logo automatically handled */}
           <label className="field"><span>Tỷ số</span><input type="number" {...bind("awayScore")} /></label>
         </div>
       </div>
