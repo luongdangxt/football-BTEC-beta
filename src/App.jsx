@@ -1191,7 +1191,7 @@ function PredictionLeaderboard({ matchDays = [], leaderboardData = [] }) {
           <p className="eyebrow">Bảng xếp hạng</p>
           <h2>Top dự đoán chính xác</h2>
           <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-            Khi cùng điểm, ai dự đoán sớm hơn sẽ xếp trên
+            Dự đoán để cùng nhận những phần thưởng giá trị nhé!
           </p>
         </div>
       </div>
