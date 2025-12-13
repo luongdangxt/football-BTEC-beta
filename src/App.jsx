@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { jwtDecode } from "jwt-decode"; // Cần cài: npm install jwt-decode
+import { jwtDecode } from "jwt-decode";
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
@@ -158,76 +158,11 @@ const sectionMatches = {
 };
 
 
-// Mock data (fallback) để xem UI khi API rỗng / lỗi
-const mockMatches = [
-  {
-    id: "m1",
-    competition: "Vòng bảng A",
-    status: "ft",
-    date: "2025-01-10",
-    start_time: "2025-01-10T09:00:00Z",
-    kickoff: "16:00",
-    minute: 90,
-    is_locked: true,
-    team_a: "Đội Văn Bổng",
-    team_a_color: groupColors.A,
-    score_a: 2,
-    team_b: "TD & AE",
-    team_b_color: groupColors.B,
-    score_b: 1,
-    events: [],
-    predictions: [
-      { full_name: "An Nguyen", pick: "2-1", pick_a: 2, pick_b: 1 },
-      { full_name: "Bui Minh", pick: "1-1", pick_a: 1, pick_b: 1 },
-    ],
-  },
-  {
-    id: "m2",
-    competition: "Vòng bảng B",
-    status: "ft",
-    date: "2025-01-10",
-    start_time: "2025-01-10T11:00:00Z",
-    kickoff: "18:00",
-    minute: 90,
-    is_locked: true,
-    team_a: "FC Thanh Triều",
-    team_a_color: groupColors.B,
-    score_a: 0,
-    team_b: "Galacticos",
-    team_b_color: groupColors.C,
-    score_b: 3,
-    events: [],
-    predictions: [
-      { full_name: "Tran Hoa", pick: "0-2", pick_a: 0, pick_b: 2 },
-      { full_name: "An Nguyen", pick: "1-3", pick_a: 1, pick_b: 3 },
-    ],
-  },
-  {
-    id: "m3",
-    competition: "Bán kết",
-    status: "upcoming",
-    date: "2025-01-11",
-    start_time: "2025-01-11T09:00:00Z",
-    kickoff: "16:00",
-    minute: null,
-    is_locked: false,
-    team_a: "Nhat A",
-    team_a_color: groupColors.A,
-    score_a: null,
-    team_b: "Nhat B",
-    team_b_color: groupColors.B,
-    score_b: null,
-    events: [],
-    predictions: [
-      { full_name: "An Nguyen", pick: "2-0", pick_a: 2, pick_b: 0 },
-      { full_name: "Le Thu", pick: "1-2", pick_a: 1, pick_b: 2 },
-    ],
-  },
-];
+
 // Helper format kickoff dạng dd/mm hh:ii
 const formatKickoffFull = (dateStr, kickoff) => {
   if (!dateStr && !kickoff) return "";
-  
+
   // Nếu có start_time dạng ISO
   if (dateStr) {
     const d = new Date(dateStr);
@@ -239,7 +174,7 @@ const formatKickoffFull = (dateStr, kickoff) => {
       return `${day}/${month} ${hour}:${min}`;
     }
   }
-  
+
   // Nếu chỉ có kickoff dạng hh:mm, kết hợp với date nếu có
   return kickoff || "";
 };
@@ -252,22 +187,22 @@ const transformMatchesToDays = (matches) => {
     const timeA = a.start_time ? new Date(a.start_time).getTime() : 0;
     const timeB = b.start_time ? new Date(b.start_time).getTime() : 0;
     const now = Date.now();
-    
+
     // Ưu tiên: trận đang diễn ra > trận sắp tới > trận đã kết thúc
     const statusA = a.status || (a.is_locked ? "ft" : "upcoming");
     const statusB = b.status || (b.is_locked ? "ft" : "upcoming");
-    
+
     const getPriority = (status, time) => {
       if (status === "live") return 0;
       if (status === "upcoming" && time >= now) return 1;
       return 2;
     };
-    
+
     const priorityA = getPriority(statusA, timeA);
     const priorityB = getPriority(statusB, timeB);
-    
+
     if (priorityA !== priorityB) return priorityA - priorityB;
-    
+
     // Cùng priority thì sắp xếp theo thời gian
     // Upcoming: gần nhất trước; đã xong: mới nhất trước
     if (priorityA <= 1) return timeA - timeB; // Sắp tới: gần nhất lên trước
@@ -277,10 +212,10 @@ const transformMatchesToDays = (matches) => {
   const grouped = sortedMatches.reduce((acc, match) => {
     const dateKey = match.date || (match.start_time ? match.start_time.split("T")[0] : "unknown");
     if (!acc[dateKey]) acc[dateKey] = [];
-    
+
     // Format kickoff dạng dd/mm hh:ii
     const kickoffDisplay = formatKickoffFull(match.start_time, match.kickoff);
-    
+
     acc[dateKey].push({
       id: match.id,
       competition: match.competition,
@@ -305,23 +240,23 @@ const transformMatchesToDays = (matches) => {
     const dateA = new Date(a).getTime();
     const dateB = new Date(b).getTime();
     const now = Date.now();
-    
+
     // Ngày có trận sắp tới/đang diễn ra lên đầu
     const hasUpcomingA = grouped[a].some(m => m.status === "live" || m.status === "upcoming");
     const hasUpcomingB = grouped[b].some(m => m.status === "live" || m.status === "upcoming");
-    
+
     if (hasUpcomingA && !hasUpcomingB) return -1;
     if (!hasUpcomingA && hasUpcomingB) return 1;
-    
+
     // Cùng loại thì sắp xếp: upcoming theo gần nhất, ft theo mới nhất
     if (hasUpcomingA) return dateA - dateB;
     return dateB - dateA;
   });
 
   return sortedDays.map(dateKey => {
-     const dateObj = new Date(dateKey);
-     const label = dateObj.toLocaleDateString("vi-VN", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-     return { id: dateKey, label: label, matches: grouped[dateKey] };
+    const dateObj = new Date(dateKey);
+    const label = dateObj.toLocaleDateString("vi-VN", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return { id: dateKey, label: label, matches: grouped[dateKey] };
   });
 };
 
@@ -353,18 +288,18 @@ function AppContent() {
   const [leaderboard, setLeaderboard] = React.useState([]);
 
   const isAdmin = user?.role === "admin";
-  
+
   // Helper function để yêu cầu đăng nhập
   const requireLogin = React.useCallback((message) => {
     setLoginPromptMessage(message || "Bạn cần đăng nhập để thực hiện thao tác này.");
     setShowLoginPrompt(true);
   }, []);
-  
+
   // Helper function để hiển thị confirm modal
   const showConfirm = React.useCallback((options) => {
     setConfirmModal({ open: true, ...options });
   }, []);
-  
+
   const closeConfirm = React.useCallback(() => {
     setConfirmModal(prev => ({ ...prev, open: false }));
   }, []);
@@ -388,7 +323,7 @@ function AppContent() {
       matches = await matchApi.getAllMatches();
     } catch (error) {
       console.error("Failed to load matches:", error);
-      setMatchDays(transformMatchesToDays(mockMatches));
+      setMatchDays({});
       return;
     }
 
@@ -409,11 +344,11 @@ function AppContent() {
           }
         })
       );
-      const data = matchesWithEvents.length > 0 ? matchesWithEvents : mockMatches;
+      const data = matchesWithEvents;
       setMatchDays(transformMatchesToDays(data));
     } catch (error) {
       console.error("Failed to hydrate matches:", error);
-      setMatchDays(transformMatchesToDays(mockMatches));
+      setMatchDays({});
     }
   }, []);
 
@@ -470,7 +405,7 @@ function AppContent() {
         const msg = JSON.parse(event.data);
         if (msg.event === "SCORE_UPDATE") {
           const { match_id, score_a, score_b } = msg.data;
-          
+
           // Update state deep inside matchDays
           setMatchDays(prevDays => prevDays.map(day => ({
             ...day,
@@ -490,11 +425,11 @@ function AppContent() {
           // Nếu đang mở modal chi tiết trận đấu đó thì update luôn
           setSelectedMatch(prev => {
             if (prev && prev.id === match_id) {
-               return {
-                 ...prev,
-                 home: { ...prev.home, score: score_a },
-                 away: { ...prev.away, score: score_b }
-               };
+              return {
+                ...prev,
+                home: { ...prev.home, score: score_a },
+                away: { ...prev.away, score: score_b }
+              };
             }
             return prev;
           });
@@ -522,7 +457,7 @@ function AppContent() {
         setUser({
           studentId: decoded.sub,
           role: decoded.role,
-          fullName: decoded.sub, 
+          fullName: decoded.sub,
         });
       } catch (error) {
         console.error("Invalid token:", error);
@@ -549,8 +484,8 @@ function AppContent() {
 
   // Logic thêm trận mới (chỉ update UI tạm thời, thực tế API đã gọi xong mới reload list)
   const handleAddMatch = (dayId, match) => {
-     // Nên reload lại toàn bộ list từ API để đảm bảo đúng sort
-     reloadMatches();
+    // Nên reload lại toàn bộ list từ API để đảm bảo đúng sort
+    reloadMatches();
   };
 
   const handleUpdateMatch = (dayId, matchId, updates) => {
@@ -586,7 +521,7 @@ function AppContent() {
         const userInfo = {
           studentId: decoded.sub,
           role: decoded.role,
-          fullName: decoded.sub, 
+          fullName: decoded.sub,
         };
 
         setUser(userInfo);
@@ -602,7 +537,7 @@ function AppContent() {
           password: payload.password
         });
         showToast("Đăng ký thành công! Vui lòng đăng nhập.", "success");
-        return true; 
+        return true;
       }
     } catch (error) {
       console.error("Auth failed:", error);
@@ -746,10 +681,10 @@ function AppContent() {
           </>
         )}
 
-        <AuthModal 
-          open={showAuth} 
-          onClose={() => setShowAuth(false)} 
-          onAuthSubmit={handleAuthSubmit} 
+        <AuthModal
+          open={showAuth}
+          onClose={() => setShowAuth(false)}
+          onAuthSubmit={handleAuthSubmit}
         />
         {selectedMatch && (
           <MatchDetailModal
@@ -886,7 +821,7 @@ function BracketBoard({ onSectionSelect }) {
   React.useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    
+
     const handleScroll = () => {
       const scrollLeft = viewport.scrollLeft;
       const viewWidth = viewport.clientWidth;
@@ -900,7 +835,7 @@ function BracketBoard({ onSectionSelect }) {
         (colGame + colGap) * 3,
         (colGame + colGap) * 4
       ];
-      
+
       let newActive = 0;
       for (let i = thresholds.length - 1; i >= 0; i--) {
         if (scrollLeft >= thresholds[i] - viewWidth / 3) {
@@ -972,7 +907,7 @@ function BracketBoard({ onSectionSelect }) {
 function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectMatch, onPredictMatch, onOpenAuth, user, onLogout, showAll = false, onClearFilter, autoScrollToNearest = false }) {
   const containerRef = React.useRef(null);
   const nearestMatchRef = React.useRef(null);
-  
+
   const formatDay = (dateStr, fallbackLabel) => {
     const d = dateStr ? new Date(dateStr) : null;
     if (!d || Number.isNaN(d.getTime())) return { full: fallbackLabel || "-", short: "", numeric: "" };
@@ -986,10 +921,10 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
   // Lọc matches dựa trên selectedSection
   const filteredMatchDays = React.useMemo(() => {
     if (!selectedSection || showAll) return matchDays;
-    
+
     const sectionConfig = sectionMatches[selectedSection];
     if (!sectionConfig) return matchDays;
-    
+
     return matchDays.map(day => {
       const filteredMatches = (day.matches || []).filter(match => {
         // Filter theo stage và group/match_code
@@ -1006,7 +941,7 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
   const nearestMatchId = React.useMemo(() => {
     let nearestMatch = null;
     const now = Date.now();
-    
+
     for (const day of filteredMatchDays) {
       for (const match of day.matches || []) {
         // Ưu tiên trận đang diễn ra
@@ -1029,8 +964,8 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
   React.useEffect(() => {
     if (autoScrollToNearest && nearestMatchId && nearestMatchRef.current) {
       setTimeout(() => {
-        nearestMatchRef.current?.scrollIntoView({ 
-          behavior: "smooth", 
+        nearestMatchRef.current?.scrollIntoView({
+          behavior: "smooth",
           block: "center"
         });
       }, 100);
@@ -1124,8 +1059,8 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
                 {(day.matches || []).map((match) => {
                   const isNearest = match.id === nearestMatchId;
                   return (
-                    <div 
-                      key={match.id} 
+                    <div
+                      key={match.id}
                       ref={isNearest ? nearestMatchRef : null}
                       className={isNearest ? "nearest-match-highlight" : ""}
                     >
@@ -1255,34 +1190,34 @@ function PredictionLeaderboard({ matchDays = [], leaderboardData = [] }) {
       {displayLeaderboard.length === 0 ? (
         <div className="results-empty">Chưa có dữ liệu dự đoán.</div>
       ) : (
-          <div className="match-list">
-            {displayLeaderboard.map((item, idx) => (
-              <div key={`${item.name}-${item.rank || idx}`} className="match-card leaderboard-card">
-                <div className="leaderboard-rank">
-                  <span className={`rank-badge ${(item.rank || idx + 1) <= 3 ? `rank-top-${item.rank || idx + 1}` : ''}`}>
-                    {item.rank || idx + 1}
-                  </span>
-                </div>
-                <div className="leaderboard-info">
-                  <strong className="leaderboard-name">{item.name}</strong>
-                  {item.total != null && (
-                    <span className="leaderboard-meta">
-                      {item.total} dự đoán
-                      {item.totalTimeSeconds != null && item.totalTimeSeconds > 0 && (
-                        <> · Sớm: {formatTimeGap(item.totalTimeSeconds)}</>
-                      )}
-                    </span>
-                  )}
-                </div>
-                <div className="leaderboard-points">
-                  <span className="points-value">{item.points}</span>
-                  <span className="points-label">điểm</span>
-                </div>
+        <div className="match-list">
+          {displayLeaderboard.map((item, idx) => (
+            <div key={`${item.name}-${item.rank || idx}`} className="match-card leaderboard-card">
+              <div className="leaderboard-rank">
+                <span className={`rank-badge ${(item.rank || idx + 1) <= 3 ? `rank-top-${item.rank || idx + 1}` : ''}`}>
+                  {item.rank || idx + 1}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="leaderboard-info">
+                <strong className="leaderboard-name">{item.name}</strong>
+                {item.total != null && (
+                  <span className="leaderboard-meta">
+                    {item.total} dự đoán
+                    {item.totalTimeSeconds != null && item.totalTimeSeconds > 0 && (
+                      <> · Sớm: {formatTimeGap(item.totalTimeSeconds)}</>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="leaderboard-points">
+                <span className="points-value">{item.points}</span>
+                <span className="points-label">điểm</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1319,13 +1254,13 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                 submitLabel="Thêm trận"
                 onSubmit={(payload) => {
                   import('./api/adminApi').then(mod => {
-                     handleApiAction(
-                       mod.default.createMatch(payload),
-                       () => {
-                          showToast?.("Đã thêm trận mới!", "success");
-                          onAddMatch?.();
-                       }
-                     );
+                    handleApiAction(
+                      mod.default.createMatch(payload),
+                      () => {
+                        showToast?.("Đã thêm trận mới!", "success");
+                        onAddMatch?.();
+                      }
+                    );
                   });
                 }}
               />
@@ -1333,45 +1268,45 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
 
             {matchDays.length > 0 ? (
               <div className="admin-match-list" style={{ display: "flex", flexDirection: "column", gap: isNarrow ? 12 : 16 }}>
-                 <div className="admin-card__head"><h3>Danh sách trận</h3></div>
-                 {matchDays.map((day) => (
-                    <div key={day.id} style={{ marginBottom: isNarrow ? 12 : 20 }}>
-                      <h5 className="eyebrow" style={{margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333"}}>
-                        {day.label}
-                      </h5>
-                      {(day.matches || []).map((match) => (
-                        <AdminMatchCard
-                          key={match.id}
-                          match={match}
-                          onToast={showToast}
-                          onUpdate={(payload) => {
-                             import('./api/adminApi').then(mod => {
+                <div className="admin-card__head"><h3>Danh sách trận</h3></div>
+                {matchDays.map((day) => (
+                  <div key={day.id} style={{ marginBottom: isNarrow ? 12 : 20 }}>
+                    <h5 className="eyebrow" style={{ margin: "10px 0", color: "#5bed9f", borderBottom: "1px solid #333" }}>
+                      {day.label}
+                    </h5>
+                    {(day.matches || []).map((match) => (
+                      <AdminMatchCard
+                        key={match.id}
+                        match={match}
+                        onToast={showToast}
+                        onUpdate={(payload) => {
+                          import('./api/adminApi').then(mod => {
+                            handleApiAction(
+                              mod.default.updateMatch(match.id, payload),
+                              () => { onUpdateMatch?.(day.id, match.id, payload); }
+                            );
+                          });
+                        }}
+                        onDelete={() => {
+                          showConfirm({
+                            title: "Xóa trận đấu",
+                            message: `Bạn có chắc muốn xóa trận ${match.home.name} vs ${match.away.name}?`,
+                            danger: true,
+                            onConfirm: () => {
+                              import('./api/adminApi').then(mod => {
                                 handleApiAction(
-                                  mod.default.updateMatch(match.id, payload),
-                                  () => { onUpdateMatch?.(day.id, match.id, payload); }
+                                  mod.default.deleteMatch(match.id),
+                                  () => { onDeleteMatch?.(day.id, match.id); }
                                 );
-                             });
-                          }}
-                          onDelete={() => {
-                            showConfirm({
-                              title: "Xóa trận đấu",
-                              message: `Bạn có chắc muốn xóa trận ${match.home.name} vs ${match.away.name}?`,
-                              danger: true,
-                              onConfirm: () => {
-                                import('./api/adminApi').then(mod => {
-                                    handleApiAction(
-                                      mod.default.deleteMatch(match.id),
-                                      () => { onDeleteMatch?.(day.id, match.id); }
-                                    );
-                                });
-                              }
-                            });
-                          }}
-                          onRefresh={onReloadMatches}
-                        />
-                      ))}
-                    </div>
-                 ))}
+                              });
+                            }
+                          });
+                        }}
+                        onRefresh={onReloadMatches}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
             ) : <p className="muted">Chưa có trận đấu nào.</p>}
           </>
@@ -1525,7 +1460,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
         </div>
       )}
 
-          <div className="admin-events">
+      <div className="admin-events">
         <div className="admin-card__head" style={{ padding: "10px 0" }}>
           <h5>Ghi bàn / sự kiện</h5>
         </div>
@@ -1633,11 +1568,11 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
   const toFormState = (match) => ({
     competition: match?.competition || "",
     status: match?.status || "upcoming",
-    
+
     // Lấy thẳng chuỗi từ match, không cần convert Date nữa
-    date: match?.date || "", 
-    kickoff: match?.kickoff || "", 
-    
+    date: match?.date || "",
+    kickoff: match?.kickoff || "",
+
     homeName: match?.home?.name || "", homeLogo: match?.home?.logo || "", homeScore: match?.home?.score ?? "",
     awayName: match?.away?.name || "", awayLogo: match?.away?.logo || "", awayScore: match?.away?.score ?? "",
   });
@@ -1647,7 +1582,7 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
 
   const parseScore = (val) => (val === "" || val == null ? undefined : Number(val));
   const bind = (field) => ({ value: form[field], onChange: (e) => setForm((prev) => ({ ...prev, [field]: e.target.value })) });
-  
+
   const handleLogoChange = (field) => (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -1750,21 +1685,21 @@ function Connector({ className, mode }) {
   const viewBox = isSemi
     ? "0 0 140 400"
     : isFinal
-    ? "0 0 120 220"
-    : isCross
-    ? "0 0 140 200"
-    : isGroup
-    ? "0 0 140 120"
-    : "0 0 140 200";
+      ? "0 0 120 220"
+      : isCross
+        ? "0 0 140 200"
+        : isGroup
+          ? "0 0 140 120"
+          : "0 0 140 200";
   let path = isSemi
     ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200"
     : isFinal
-    ? "M0 110 C 30 110 60 110 120 110"
-    : isCross
-    ? "M0 40 C 32 40 52 70 70 100 C 88 130 108 160 140 160 M0 160 C 32 160 52 130 70 100 C 88 70 108 40 140 40"
-    : isGroup
-    ? "M0 60 C 30 60 60 60 140 60"
-    : "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
+      ? "M0 110 C 30 110 60 110 120 110"
+      : isCross
+        ? "M0 40 C 32 40 52 70 70 100 C 88 130 108 160 140 160 M0 160 C 32 160 52 130 70 100 C 88 70 108 40 140 40"
+        : isGroup
+          ? "M0 60 C 30 60 60 60 140 60"
+          : "M0 50 C 35 50 35 70 70 100 C 35 130 35 150 0 150 M70 100 C 100 100 125 100 140 100";
   return (
     <div className={className}>
       <svg viewBox={viewBox} className="connector-svg" preserveAspectRatio="none">
@@ -1776,11 +1711,11 @@ function Connector({ className, mode }) {
 
 function MatchCard({ match, onSelect, onPredict }) {
   const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
-  
+
   // Trạng thái tiếng Việt có dấu
-  const statusText = match.status === "live" ? "Đang diễn ra" 
-                   : match.status === "ft" ? "Kết thúc" 
-                   : "Sắp diễn ra";
+  const statusText = match.status === "live" ? "Đang diễn ra"
+    : match.status === "ft" ? "Kết thúc"
+      : "Sắp diễn ra";
   const canPredict = match.status === "upcoming" && !match.is_locked;
 
   const handlePredictClick = (e) => {
@@ -1890,7 +1825,7 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
     }
   };
 
-  const displayMatch = detail || match; 
+  const displayMatch = detail || match;
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
   const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
@@ -2090,15 +2025,15 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
                 <p className="eyebrow">Tổng lượt: {stats.total || 0}</p>
                 {stats.total > 0 ? (
                   <div className="predict-bar predict-bar--stack">
-                    <div className="predict-segment predict-segment--home" style={{width: `${stats.home_percent}%`}}>{stats.home_percent}%</div>
-                    <div className="predict-segment predict-segment--draw" style={{width: `${stats.draw_percent}%`}}>{stats.draw_percent}%</div>
-                    <div className="predict-segment predict-segment--away" style={{width: `${stats.away_percent}%`}}>{stats.away_percent}%</div>
+                    <div className="predict-segment predict-segment--home" style={{ width: `${stats.home_percent}%` }}>{stats.home_percent}%</div>
+                    <div className="predict-segment predict-segment--draw" style={{ width: `${stats.draw_percent}%` }}>{stats.draw_percent}%</div>
+                    <div className="predict-segment predict-segment--away" style={{ width: `${stats.away_percent}%` }}>{stats.away_percent}%</div>
                   </div>
                 ) : (
                   <p className="muted">Chưa có ai dự đoán</p>
                 )}
               </div>
-              <div className="predict-list__body" style={{maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8}}>
+              <div className="predict-list__body" style={{ maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8 }}>
                 {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
                 {sortedPredictors.map((p, i) => {
                   const raw =
