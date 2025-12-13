@@ -287,6 +287,8 @@ function AppContent() {
   const [publicTab, setPublicTab] = React.useState("bracket");
   const [leaderboard, setLeaderboard] = React.useState([]);
 
+  const [myPredictions, setMyPredictions] = React.useState({});
+
   const isAdmin = user?.role === "admin";
 
   // Helper function để yêu cầu đăng nhập
@@ -316,6 +318,21 @@ function AppContent() {
     setShowAuth(true);
   };
 
+  // Fetch user predictions
+  const fetchMyPredictions = React.useCallback(async () => {
+    if (!user) {
+      setMyPredictions({});
+      return;
+    }
+    try {
+      const list = await matchApi.getMyPredictions();
+      const map = list.reduce((acc, p) => ({ ...acc, [p.match_id]: p }), {});
+      setMyPredictions(map);
+    } catch (error) {
+      console.error("Failed to load my predictions:", error);
+    }
+  }, [user]);
+
   // Fetch match list and hydrate events from detail API so admin view stays in sync
   const fetchMatchesWithEvents = React.useCallback(async () => {
     let matches = [];
@@ -326,30 +343,7 @@ function AppContent() {
       setMatchDays({});
       return;
     }
-
-    try {
-      const matchesWithEvents = await Promise.all(
-        matches.map(async (match) => {
-          try {
-            const detail = await matchApi.getMatchDetail(match.id);
-            return {
-              ...match,
-              ...detail,
-              events: detail.events || [],
-              predictions: detail.predictors || match.predictions || [],
-            };
-          } catch (error) {
-            console.error("Failed to load match detail:", match.id, error);
-            return { ...match, events: [], predictions: match.predictions || [] };
-          }
-        })
-      );
-      const data = matchesWithEvents;
-      setMatchDays(transformMatchesToDays(data));
-    } catch (error) {
-      console.error("Failed to hydrate matches:", error);
-      setMatchDays({});
-    }
+    setMatchDays(transformMatchesToDays(matches));
   }, []);
 
   const fetchLeaderboard = React.useCallback(async () => {
@@ -362,11 +356,16 @@ function AppContent() {
     }
   }, []);
 
-  // 1. Fetch dữ liệu trận đấu và bảng điểm khi load trang
+  // 1. Fetch dữ liệu trận đấu và bảng điểm khi load trang cho mọi người
   React.useEffect(() => {
     fetchMatchesWithEvents();
     fetchLeaderboard();
   }, [fetchMatchesWithEvents, fetchLeaderboard]);
+
+  // 2. Fetch my predictions khi user login
+  React.useEffect(() => {
+    fetchMyPredictions();
+  }, [fetchMyPredictions]);
 
   // Refresh leaderboard when mở tab BXH
   React.useEffect(() => {
@@ -374,8 +373,6 @@ function AppContent() {
       fetchLeaderboard();
     }
   }, [publicTab, leaderboard.length, fetchLeaderboard]);
-
-
 
   const loadUsers = React.useCallback(async () => {
     try {
@@ -392,57 +389,16 @@ function AppContent() {
     }
   }, [view, loadUsers]);
 
-  // 2. Kết nối WebSocket để nhận điểm số Realtime
+  // 2. HTTP Polling để nhận điểm số (Thay thế WebSocket)
   React.useEffect(() => {
-    // Lưu ý: Port 8000 là port của FastAPI
-    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || "ws://localhost:8000";
-    const ws = new WebSocket(`${wsBaseUrl}/ws/live-scores`);
+    console.log("Starting HTTP Polling for live scores...");
+    const interval = setInterval(() => {
+      fetchMatchesWithEvents();
+      fetchLeaderboard();
+    }, 30000); // 30 giây pull 1 lần
 
-    ws.onopen = () => console.log("Connected to WebSocket Live Scores");
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.event === "SCORE_UPDATE") {
-          const { match_id, score_a, score_b } = msg.data;
-
-          // Update state deep inside matchDays
-          setMatchDays(prevDays => prevDays.map(day => ({
-            ...day,
-            matches: day.matches.map(match => {
-              if (match.id === match_id) {
-                return {
-                  ...match,
-                  home: { ...match.home, score: score_a },
-                  away: { ...match.away, score: score_b },
-                  status: "live" // Tự động chuyển trạng thái sang live nếu có điểm
-                };
-              }
-              return match;
-            })
-          })));
-
-          // Nếu đang mở modal chi tiết trận đấu đó thì update luôn
-          setSelectedMatch(prev => {
-            if (prev && prev.id === match_id) {
-              return {
-                ...prev,
-                home: { ...prev.home, score: score_a },
-                away: { ...prev.away, score: score_b }
-              };
-            }
-            return prev;
-          });
-
-          fetchLeaderboard();
-        }
-      } catch (err) {
-        console.error("WS Error:", err);
-      }
-    };
-
-    return () => ws.close();
-  }, [fetchLeaderboard]);
+    return () => clearInterval(interval);
+  }, [fetchMatchesWithEvents, fetchLeaderboard]);
 
   // 3. Check login state
   React.useEffect(() => {
@@ -457,7 +413,7 @@ function AppContent() {
         setUser({
           studentId: decoded.sub,
           role: decoded.role,
-          fullName: decoded.sub,
+          fullName: decoded.full_name || decoded.sub,
         });
       } catch (error) {
         console.error("Invalid token:", error);
@@ -590,6 +546,42 @@ function AppContent() {
           </div>
         </header>
 
+        {/* User Status Badge - Góc phải trên - Bấm để đăng xuất */}
+        {user && (
+          <div
+            className="user-status-badge"
+            onClick={handleLogout}
+            title="Bấm để đăng xuất"
+            style={{
+              position: "fixed",
+              top: 12,
+              right: 12,
+              background: "rgba(10, 44, 29, 0.9)",
+              backdropFilter: "blur(8px)",
+              padding: "6px 12px",
+              borderRadius: 20,
+              fontSize: 12,
+              color: "#5bed9f",
+              fontWeight: 600,
+              zIndex: 1000,
+              border: "1px solid rgba(91, 237, 159, 0.3)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              cursor: "pointer",
+              transition: "all 150ms ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(91, 237, 159, 0.2)";
+              e.currentTarget.style.transform = "scale(1.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(10, 44, 29, 0.9)";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+          >
+            👤 {user.fullName || user.studentId} <span style={{ opacity: 0.7, marginLeft: 4 }}>✕</span>
+          </div>
+        )}
+
         {isAdmin && (
           <div className="page-tabs">
             <button className={`page-tab ${view === "results" ? "is-active" : ""}`} type="button" onClick={() => setView("results")}>
@@ -671,16 +663,19 @@ function AppContent() {
                   matchDays={matchDays}
                   selectedLabel={selectedLabel}
                   selectedSection={selectedSection}
-                  onSelectMatch={handleOpenMatch}
-                  onPredictMatch={handlePredictMatch}
-                  onOpenAuth={() => setShowAuth(true)}
                   user={user}
                   onLogout={handleLogout}
+                  onOpenAuth={() => { setAuthMode("login"); setShowAuth(true); }}
+                  onSelectMatch={handleOpenMatch}
+                  onPredictMatch={handleOpenMatch}
                   showAll={!selectedSection}
-                  onClearFilter={() => setSelectedSection(null)}
+                  onClearFilter={() => handleSectionSelect(null)}
+                  autoScrollToNearest={true}
+                  myPredictions={myPredictions}
                 />
               </section>
             )}
+
             {publicTab === "predictions" && (
               <section className="section-block">
                 <PredictionLeaderboard matchDays={matchDays} leaderboardData={leaderboard} />
@@ -722,7 +717,7 @@ function AppContent() {
           danger={confirmModal.danger}
         />
       </main>
-    </div>
+    </div >
   );
 }
 
@@ -791,18 +786,26 @@ function AuthForm({ mode, onSubmit, onError }) {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
       <label className="field">
         <span>MSV</span>
-        <input type="text" name="studentId" className="uppercase-input" placeholder="VD: BH01234" required onChange={(e) => { e.target.value = e.target.value.toUpperCase(); }} />
+        <input
+          type="text"
+          name="studentId"
+          className="uppercase-input"
+          placeholder="VD: BH01234"
+          required
+          autoComplete="off"
+          onChange={(e) => { e.target.value = e.target.value.toUpperCase(); }}
+        />
       </label>
       {!isLogin && (
         <>
-          <label className="field"><span>Họ và tên</span><input type="text" name="fullName" required /></label>
-          <label className="field"><span>Số điện thoại</span><input type="tel" name="phone" required /></label>
+          <label className="field"><span>Họ và tên</span><input type="text" name="fullName" required autoComplete="off" /></label>
+          <label className="field"><span>Số điện thoại</span><input type="tel" name="phone" required autoComplete="off" /></label>
         </>
       )}
-      <label className="field"><span>{isLogin ? "Mật khẩu" : "Tạo mật khẩu"}</span><input type="password" name="password" required /></label>
+      <label className="field"><span>{isLogin ? "Mật khẩu" : "Tạo mật khẩu"}</span><input type="password" name="password" required autoComplete="new-password" /></label>
       <button className="primary-btn" type="submit">{isLogin ? "Đăng nhập" : "Tạo tài khoản"}</button>
     </form>
   );
@@ -912,7 +915,7 @@ function BracketBoard({ onSectionSelect }) {
   );
 }
 
-function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectMatch, onPredictMatch, onOpenAuth, user, onLogout, showAll = false, onClearFilter, autoScrollToNearest = false }) {
+function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectMatch, onPredictMatch, onOpenAuth, user, onLogout, showAll = false, onClearFilter, autoScrollToNearest = false, myPredictions = {} }) {
   const containerRef = React.useRef(null);
   const nearestMatchRef = React.useRef(null);
 
@@ -996,23 +999,7 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
               Xem tất cả
             </button>
           )}
-          {user ? (
-            <div
-              className="user-strip"
-              style={{
-                margin: 0,
-                justifyContent: "flex-end",
-              }}
-            >
-              <span className="muted">
-                Đang đăng nhập: <strong>{user.fullName || user.studentId}</strong>
-                {user.role === "admin" && " (Admin)"}
-              </span>
-              <button className="primary-btn ghost-btn" type="button" onClick={() => onLogout?.()}>
-                Đăng xuất
-              </button>
-            </div>
-          ) : (
+          {!user && (
             <button className="primary-btn ghost-btn" type="button" onClick={() => onOpenAuth?.()}>
               Đăng nhập
             </button>
@@ -1076,6 +1063,9 @@ function ResultsFeed({ matchDays = [], selectedLabel, selectedSection, onSelectM
                         match={match}
                         onSelect={() => onSelectMatch?.(match)}
                         onPredict={() => onPredictMatch?.(match)}
+                        user={user}
+                        onOpenAuth={onOpenAuth}
+                        myPredictions={myPredictions}
                       />
                     </div>
                   );
@@ -1680,7 +1670,7 @@ function ChampionCard({ extraClass }) {
   return (
     <div className={`champion-card ${extraClass || ""}`}>
       <div className="cup-icon"><div className="cup-bowl" /><div className="cup-base" /></div>
-      <div className="champion-text"><span className="eyebrow">Champion</span><strong>Waiting...</strong></div>
+      <div className="champion-text"><span className="eyebrow">Vô địch</span><strong>Đang chờ...</strong></div>
     </div>
   );
 }
@@ -1717,20 +1707,30 @@ function Connector({ className, mode }) {
   );
 }
 
-function MatchCard({ match, onSelect, onPredict }) {
-  const statusLabel = match.status === "live" ? `LIVE ${match.minute || ""}` : match.status === "ft" ? "End" : match.kickoff;
+function MatchCard({ match, onSelect, onPredict, user, onOpenAuth, myPredictions }) {
+  // Translate labels
+  const statusLabel = match.status === "live" ? `TRỰC TIẾP ${match.minute || ""}` : match.status === "ft" ? "Kết thúc" : match.kickoff;
 
   // Trạng thái tiếng Việt có dấu
   const statusText = match.status === "live" ? "Đang diễn ra"
     : match.status === "ft" ? "Kết thúc"
       : "Sắp diễn ra";
+
   const canPredict = match.status === "upcoming" && !match.is_locked;
+
+  // Check if teams are valid (not empty/null and not "TBD")
+  const hasTeams = match.home?.name && match.away?.name && match.home.name !== "TBD" && match.away.name !== "TBD";
 
   const handlePredictClick = (e) => {
     e.stopPropagation();
+    if (!user) {
+      onOpenAuth?.();
+      return;
+    }
     if (onPredict) onPredict(match);
     else onSelect?.();
   };
+
   return (
     <article className={`match-card match-card--${match.status} ${onSelect ? "match-card--clickable" : ""}`} onClick={onSelect}>
       <div className="match-meta">
@@ -1743,29 +1743,50 @@ function MatchCard({ match, onSelect, onPredict }) {
         <div className="scoreline"><span className="score">{match.home.score ?? "-"}</span><span className="dash">-</span><span className="score">{match.away.score ?? "-"}</span></div>
         <TeamCell team={match.away} align="right" />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 12, flexWrap: "wrap" }}>
-        <span className="muted" style={{ fontSize: 13 }}>Ấn để xem chi tiết & dự đoán</span>
-        <button
-          className="primary-btn"
-          type="button"
-          disabled={!canPredict}
-          onClick={handlePredictClick}
-          style={{
-            padding: "8px 14px",
-            fontSize: 13,
-            fontWeight: 800,
-            letterSpacing: 0.2,
-            boxShadow: "0 0 0 2px rgba(91, 237, 159, 0.25), 0 10px 30px rgba(91, 237, 159, 0.35)",
-            background: canPredict ? "linear-gradient(120deg, #5bed9f, #38d27f)" : "rgba(255,255,255,0.12)",
-            color: canPredict ? "#0a2c1d" : "#ccc",
-            border: "none",
-            transition: "transform 120ms ease, box-shadow 120ms ease",
-            transform: canPredict ? "translateY(-1px)" : "none",
-          }}
-        >
-          {canPredict ? "Dự đoán" : "Đã khóa"}
-        </button>
-      </div>
+
+      {/* Chỉ hiện nút dự đoán nếu đã xác định đội đấu */}
+      {hasTeams && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 12, flexWrap: "wrap" }}>
+          <span className="muted" style={{ fontSize: 13 }}>
+            {user ? "Ấn để xem chi tiết & dự đoán" : "Đăng nhập để tham gia dự đoán"}
+          </span>
+          {myPredictions && myPredictions[match.id] ? (
+            <div style={{
+              padding: "6px 14px",
+              background: "rgba(91, 237, 159, 0.15)",
+              border: "1px solid rgba(91, 237, 159, 0.4)",
+              borderRadius: 6,
+              color: "#5bed9f",
+              fontSize: 13,
+              fontWeight: 700
+            }}>
+              Bạn dự đoán: {myPredictions[match.id].score_a} - {myPredictions[match.id].score_b}
+            </div>
+          ) : (
+            <button
+              className="primary-btn"
+              type="button"
+              // Nếu chưa login thì luôn enable để bấm vào hiện login form
+              disabled={user ? !canPredict : false}
+              onClick={handlePredictClick}
+              style={{
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: 0.2,
+                boxShadow: "0 0 0 2px rgba(91, 237, 159, 0.25), 0 10px 30px rgba(91, 237, 159, 0.35)",
+                background: (user && !canPredict) ? "rgba(255,255,255,0.12)" : "linear-gradient(120deg, #5bed9f, #38d27f)",
+                color: (user && !canPredict) ? "#ccc" : "#0a2c1d",
+                border: "none",
+                transition: "transform 120ms ease, box-shadow 120ms ease",
+                transform: (user && !canPredict) ? "none" : "translateY(-1px)",
+              }}
+            >
+              {!user ? "Đăng nhập / Đăng ký" : (canPredict ? "Dự đoán" : "Đã khóa")}
+            </button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
