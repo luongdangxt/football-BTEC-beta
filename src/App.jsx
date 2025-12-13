@@ -5,7 +5,7 @@ import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
 import logoLeft from "./images/Logo-BTEC.png";
 import logoCenter from "./images/Logo Bong Da.png";
-import logoRight from "./images/logo mel-01.png";
+import logoRight from "./images/logo-mel.png";
 
 // --- TOAST CONTEXT & COMPONENT ---
 const ToastContext = React.createContext(null);
