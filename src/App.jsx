@@ -1718,8 +1718,13 @@ function MatchCard({ match, onSelect, onPredict, user, onOpenAuth, myPredictions
 
   const canPredict = match.status === "upcoming" && !match.is_locked;
 
-  // Check if teams are valid (not empty/null and not "TBD")
-  const hasTeams = match.home?.name && match.away?.name && match.home.name !== "TBD" && match.away.name !== "TBD";
+  // Check if teams are valid (not empty/null and not placeholder names)
+  const isValidTeamName = (name) => {
+    if (!name || typeof name !== 'string') return false;
+    const n = name.trim().toLowerCase();
+    return n && n !== 'tbd' && n !== '?' && n !== 'chưa xác định' && n !== 'n/a' && n.length > 0;
+  };
+  const hasTeams = isValidTeamName(match.home?.name) && isValidTeamName(match.away?.name);
 
   const handlePredictClick = (e) => {
     e.stopPropagation();
@@ -1896,6 +1901,15 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
     : predictors;
   const status = (displayMatch.status || (displayMatch.is_locked ? "ft" : "upcoming"));
   const isUpcoming = status === "upcoming" && !displayMatch.is_locked;
+
+  // Check if teams are valid for prediction
+  const isValidTeamName = (name) => {
+    if (!name || typeof name !== 'string') return false;
+    const n = name.trim().toLowerCase();
+    return n && n !== 'tbd' && n !== '?' && n !== 'chưa xác định' && n !== 'n/a' && n.length > 0;
+  };
+  const hasTeams = isValidTeamName(displayMatch.team_a) && isValidTeamName(displayMatch.team_b);
+  const canPredict = isUpcoming && hasTeams;
   const eventsA = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side !== "b") : [];
   const eventsB = Array.isArray(displayMatch.events) ? displayMatch.events.filter(ev => ev.team_side === "b") : [];
   const minuteWidth = isNarrow ? 28 : 44;
@@ -2043,11 +2057,12 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
                   <button
                     className="primary-btn predict-btn"
                     onClick={handlePredict}
-                    disabled={!isUpcoming || hasPredicted}
+                    disabled={!canPredict || hasPredicted}
                   >
-                    {isUpcoming ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa"}
+                    {!hasTeams ? "Chưa xác định đội" : (canPredict ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa")}
                   </button>
-                  {!isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
+                  {!hasTeams && <div className="muted" style={{ fontSize: 12 }}>Dự đoán sẽ mở khi đã xác định 2 đội đấu</div>}
+                  {hasTeams && !isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
                 </div>
               </div>
               <div className="predict-summary">
