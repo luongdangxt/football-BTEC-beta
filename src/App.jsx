@@ -3,9 +3,9 @@ import { jwtDecode } from "jwt-decode";
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
-import logoLeft from "./images/image2.jpg";
+import logoLeft from "./images/Logo-BTEC.png";
 import logoCenter from "./images/Logo Bong Da.png";
-import logoRight from "./images/image1.jpg";
+import logoRight from "./images/logo mel-01.png";
 
 // --- TOAST CONTEXT & COMPONENT ---
 const ToastContext = React.createContext(null);
@@ -568,7 +568,7 @@ function AppContent() {
               <img src={logoRight} alt="BTEC IT Club Logo" className="hero-logo" />
             </div>
             <div className="hero-text">
-              <h1 className="hero-title">BTEC FPT FOOTBALL CHAMPIONSHIP 2025</h1>
+              <h1 className="hero-title">FOOTBALL CHAMPIONSHIP 2025</h1>
               <p className="hero-subtitle">Giải bóng đá sinh viên BTEC FPT</p>
             </div>
             <div className="sponsor-strip">
