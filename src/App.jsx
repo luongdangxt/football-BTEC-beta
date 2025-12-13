@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 import authApi from "./api/authApi";   // Import API module
 import matchApi from "./api/matchApi"; // Import Match API
 import userAdminApi from "./api/userAdminApi";
+import teamsApi from "./api/teamsApi"; // Import Teams API
 import logoLeft from "./images/Logo-BTEC.png";
 import logoCenter from "./images/Logo Bong Da.png";
 import logoRight from "./images/logo-mel.png";
@@ -286,8 +287,19 @@ function AppContent() {
   const [users, setUsers] = React.useState([]);
   const [publicTab, setPublicTab] = React.useState("bracket");
   const [leaderboard, setLeaderboard] = React.useState([]);
+  const [teams, setTeams] = React.useState([]); // Danh sách các đội từ database
 
   const [myPredictions, setMyPredictions] = React.useState({});
+
+  // Fetch teams from database
+  const fetchTeams = React.useCallback(async () => {
+    try {
+      const data = await teamsApi.getAll();
+      setTeams(data);
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+    }
+  }, []);
 
   const isAdmin = user?.role === "admin";
 
@@ -598,7 +610,9 @@ function AppContent() {
             <AdminPanel
               matchDays={matchDays}
               users={users}
+              teams={teams}
               onRefreshUsers={loadUsers}
+              onRefreshTeams={fetchTeams}
               onUpdateDay={handleUpdateDay}
               onAddMatch={handleAddMatch}
               onUpdateMatch={handleUpdateMatch}
@@ -1219,7 +1233,7 @@ function PredictionLeaderboard({ matchDays = [], leaderboardData = [] }) {
   );
 }
 
-function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch, onReloadMatches, showToast, showConfirm }) {
+function AdminPanel({ matchDays = [], users = [], teams = [], onRefreshUsers, onRefreshTeams, onUpdateDay, onAddMatch, onUpdateMatch, onDeleteMatch, onReloadMatches, showToast, showConfirm }) {
   // Hàm xử lý gọi API chung để không phải reload trang
   const handleApiAction = async (promise, onSuccess) => {
     try {
@@ -1233,12 +1247,64 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
   const [section, setSection] = React.useState("matches");
   const isNarrow = useIsNarrow(768);
 
+  // Team form state
+  const [newTeamName, setNewTeamName] = React.useState("");
+  const [newTeamLogo, setNewTeamLogo] = React.useState("");
+  const [editingTeam, setEditingTeam] = React.useState(null);
+
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) {
+      showToast?.("Vui lòng nhập tên đội", "warning");
+      return;
+    }
+    try {
+      await teamsApi.create({ name: newTeamName.trim(), logo: newTeamLogo });
+      showToast?.("Đã thêm đội mới!", "success");
+      setNewTeamName("");
+      setNewTeamLogo("");
+      onRefreshTeams?.();
+    } catch (err) {
+      showToast?.(err.response?.data?.detail || err.message, "error");
+    }
+  };
+
+  const handleUpdateTeam = async (teamId, data) => {
+    try {
+      await teamsApi.update(teamId, data);
+      showToast?.("Đã cập nhật đội!", "success");
+      setEditingTeam(null);
+      onRefreshTeams?.();
+    } catch (err) {
+      showToast?.(err.response?.data?.detail || err.message, "error");
+    }
+  };
+
+  const handleDeleteTeam = (team) => {
+    showConfirm({
+      title: "Xóa đội",
+      message: `Bạn có chắc muốn xóa đội "${team.name}"?`,
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await teamsApi.delete(team.id);
+          showToast?.("Đã xóa đội!", "success");
+          onRefreshTeams?.();
+        } catch (err) {
+          showToast?.(err.response?.data?.detail || err.message, "error");
+        }
+      }
+    });
+  };
+
+  const sectionTitle = section === "matches" ? "Quản lý trận đấu" : section === "users" ? "Quản lý user" : "Quản lý đội";
+
   return (
     <section className="admin-panel" style={isNarrow ? { padding: "12px 10px 24px", maxWidth: "540px", width: "100%", margin: "0 auto", boxSizing: "border-box", overflowX: "hidden" } : {}}>
       <div className="results-header">
-        <div><p className="eyebrow">Trang admin</p><h2>{section === "matches" ? "Quản lý trận đấu" : "Quản lý user"}</h2></div>
+        <div><p className="eyebrow">Trang admin</p><h2>{sectionTitle}</h2></div>
         <div className="feed-tabs">
           <button className={`feed-tab ${section === "matches" ? "is-active" : ""}`} onClick={() => setSection("matches")}>Trận đấu</button>
+          <button className={`feed-tab ${section === "teams" ? "is-active" : ""}`} onClick={() => { setSection("teams"); onRefreshTeams?.(); }}>Đội</button>
           <button className={`feed-tab ${section === "users" ? "is-active" : ""}`} onClick={() => { setSection("users"); onRefreshUsers?.(); }}>User</button>
         </div>
       </div>
@@ -1250,6 +1316,7 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
               <div className="admin-card__head"><h4>Thêm trận mới</h4></div>
               <AdminMatchForm
                 submitLabel="Thêm trận"
+                teams={teams}
                 onSubmit={(payload) => {
                   import('./api/adminApi').then(mod => {
                     handleApiAction(
@@ -1307,6 +1374,65 @@ function AdminPanel({ matchDays = [], users = [], onRefreshUsers, onUpdateDay, o
                 ))}
               </div>
             ) : <p className="muted">Chưa có trận đấu nào.</p>}
+          </>
+        ) : section === "teams" ? (
+          <>
+            <div className="admin-card admin-card--wide">
+              <div className="admin-card__head">
+                <h4>Thêm đội mới</h4>
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+                <label className="field" style={{ flex: 1, minWidth: 150 }}>
+                  <span>Tên đội</span>
+                  <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="Nhập tên đội..." />
+                </label>
+                <label className="field" style={{ flex: 1, minWidth: 150 }}>
+                  <span>Logo URL (tùy chọn)</span>
+                  <input type="text" value={newTeamLogo} onChange={(e) => setNewTeamLogo(e.target.value)} placeholder="https://..." />
+                </label>
+                <button className="primary-btn" type="button" onClick={handleCreateTeam} style={{ marginBottom: 4 }}>Thêm đội</button>
+              </div>
+            </div>
+
+            <div className="admin-card admin-card--wide">
+              <div className="admin-card__head">
+                <h4>Danh sách đội ({teams.length})</h4>
+                <button className="primary-btn ghost-btn" type="button" onClick={onRefreshTeams}>Tải lại</button>
+              </div>
+              {teams.length > 0 ? (
+                <div className="admin-user-grid" style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: isNarrow ? 12 : 16 }}>
+                  {teams.map((team) => (
+                    <div key={team.id} className="admin-user-tile" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {team.logo ? (
+                        <img src={team.logo} alt={team.name} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 6, background: "rgba(255,255,255,0.05)" }} />
+                      ) : (
+                        <div style={{ width: 40, height: 40, borderRadius: 6, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#5bed9f" }}>
+                          {team.name?.[0] || "?"}
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        {editingTeam?.id === team.id ? (
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <input type="text" value={editingTeam.name} onChange={(e) => setEditingTeam(prev => ({ ...prev, name: e.target.value }))} style={{ flex: 1, minWidth: 100 }} />
+                            <input type="text" value={editingTeam.logo} onChange={(e) => setEditingTeam(prev => ({ ...prev, logo: e.target.value }))} placeholder="Logo URL" style={{ flex: 1, minWidth: 100 }} />
+                            <button className="primary-btn" type="button" onClick={() => handleUpdateTeam(team.id, { name: editingTeam.name, logo: editingTeam.logo })}>Lưu</button>
+                            <button className="secondary-btn" type="button" onClick={() => setEditingTeam(null)}>Hủy</button>
+                          </div>
+                        ) : (
+                          <div className="admin-user-name">{team.name}</div>
+                        )}
+                      </div>
+                      {editingTeam?.id !== team.id && (
+                        <div className="admin-user-actions" style={{ display: "flex", gap: 6 }}>
+                          <button className="primary-btn ghost-btn" type="button" onClick={() => setEditingTeam({ id: team.id, name: team.name, logo: team.logo || "" })}>Sửa</button>
+                          <button className="primary-btn" type="button" onClick={() => handleDeleteTeam(team)}>Xóa</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="muted">Chưa có đội nào. Thêm đội mới ở trên.</p>}
+            </div>
           </>
         ) : (
           <>
@@ -1555,7 +1681,7 @@ function AdminMatchCard({ match, onUpdate, onDelete, onRefresh, onToast }) {
   );
 }
 
-function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
+function AdminMatchForm({ initialMatch, submitLabel = "Luu", teams = [], onSubmit }) {
   const emptyForm = {
     competition: "", status: "upcoming", date: "", kickoff: "", minute: "",
     homeName: "", homeLogo: "", homeScore: "", awayName: "", awayLogo: "", awayScore: "",
@@ -1587,6 +1713,24 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
       const reader = new FileReader();
       reader.onload = () => setForm((prev) => ({ ...prev, [field]: reader.result || "" }));
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Khi chọn đội từ dropdown, tự động fill logo nếu có
+  const handleTeamSelect = (side, teamName) => {
+    const team = teams.find(t => t.name === teamName);
+    if (side === "home") {
+      setForm(prev => ({
+        ...prev,
+        homeName: teamName,
+        homeLogo: team?.logo || prev.homeLogo || ""
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        awayName: teamName,
+        awayLogo: team?.logo || prev.awayLogo || ""
+      }));
     }
   };
 
@@ -1635,7 +1779,13 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
       <div className="admin-form-row admin-form-row--teams" style={teamsRowStyle}>
         <div className="admin-team-col">
           <p className="eyebrow">Đội nhà</p>
-          <label className="field"><span>Tên</span><input type="text" {...bind("homeName")} /></label>
+          <label className="field">
+            <span>Tên</span>
+            <select className="field-select" value={form.homeName} onChange={(e) => handleTeamSelect("home", e.target.value)}>
+              <option value="">-- Chọn đội --</option>
+              {teams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+            </select>
+          </label>
           <div className="logo-upload">
             <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("homeLogo")} /></label>
             {form.homeLogo && <div className="logo-preview"><img src={form.homeLogo} alt="" /></div>}
@@ -1644,7 +1794,13 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", onSubmit }) {
         </div>
         <div className="admin-team-col">
           <p className="eyebrow">Đội khách</p>
-          <label className="field"><span>Tên</span><input type="text" {...bind("awayName")} /></label>
+          <label className="field">
+            <span>Tên</span>
+            <select className="field-select" value={form.awayName} onChange={(e) => handleTeamSelect("away", e.target.value)}>
+              <option value="">-- Chọn đội --</option>
+              {teams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+            </select>
+          </label>
           <div className="logo-upload">
             <label className="field"><span>Logo</span><input type="file" accept="image/*" onChange={handleLogoChange("awayLogo")} /></label>
             {form.awayLogo && <div className="logo-preview"><img src={form.awayLogo} alt="" /></div>}
