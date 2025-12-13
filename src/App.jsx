@@ -476,6 +476,18 @@ function AppContent() {
     setMatchDays((prev) => prev.map((day) => (day.id === dayId ? { ...day, ...updates } : day)));
   };
 
+  // 4. Global Event Listener for 401 Unauthorized
+  React.useEffect(() => {
+    const handleUnauthorized = (event) => {
+      const msg = event.detail?.message || "Vui lòng đăng nhập để tiếp tục";
+      setUser(null); // Clear user state
+      requireLogin(msg);
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, [requireLogin]);
+
   // Helper reload toàn bộ danh sách trận và bảng điểm từ API
   const reloadMatches = React.useCallback(() => {
     fetchMatchesWithEvents();
@@ -573,11 +585,7 @@ function AppContent() {
             </div>
             <div className="sponsor-strip">
               <span className="sponsor-label">Tài trợ bởi:</span>
-              <span className="sponsor-name">Trường BTEC FPT</span>
-              <span className="sponsor-sep">•</span>
-              <span className="sponsor-name">CLB IT BTEC</span>
-              <span className="sponsor-sep">•</span>
-              <span className="sponsor-name">Phòng CTSV</span>
+              <span className="sponsor-name">FPT Polytechnic International</span>
             </div>
           </div>
         </header>

@@ -27,11 +27,14 @@ axiosClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Xử lý lỗi chung (ví dụ: hết hạn token thì logout luôn)
+    // Xử lý lỗi chung
     if (error.response && error.response.status === 401) {
-       // Logic logout tự động nếu cần
-       // localStorage.removeItem('token');
-       // window.location.href = '/login'; 
+      // Dispatch event để App.jsx bắt được và hiện popup login
+      window.dispatchEvent(new CustomEvent("auth:unauthorized", {
+        detail: { message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." }
+      }));
+      // Có thể clear token luôn nếu muốn
+      localStorage.removeItem('token');
     }
     throw error;
   }
