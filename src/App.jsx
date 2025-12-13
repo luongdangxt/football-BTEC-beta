@@ -2291,32 +2291,7 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
                   <p className="muted">Chưa có ai dự đoán</p>
                 )}
               </div>
-              <div className="predict-list__body" style={{ maxHeight: '200px', overflowY: 'auto', display: "flex", flexDirection: "column", gap: 8 }}>
-                {sortedPredictors.length === 0 && <p className="muted">Không có dữ liệu</p>}
-                {sortedPredictors.map((p, i) => {
-                  const raw =
-                    p.full_name ||
-                    p.fullName ||
-                    p.user_full_name ||
-                    p.userFullName ||
-                    p.user_msv ||
-                    p.msv ||
-                    p.userId ||
-                    p.user_id ||
-                    p.userID ||
-                    "";
-                  const clean = raw ? raw.toString().trim() : "";
-                  const firstChar = clean ? clean[0] : String.fromCharCode(65 + (i % 26));
-                  const masked = `${firstChar}${"*".repeat(Math.max(3, (clean || "****").length - 1))}`;
-                  const nameLabel = masked;
-                  return (
-                    <div key={i} className="predict-item" style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>{nameLabel}</span>
-                      <span className="muted"></span>
-                    </div>
-                  );
-                })}
-              </div>
+
             </div>
           )}
         </div>
