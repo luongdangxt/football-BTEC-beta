@@ -2239,46 +2239,48 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
                   <span>{myPrediction.pick}</span>
                 </div>
               )}
-              <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div className="predict-input__row">
-                  <div className="predict-team">{displayMatch.team_a}</div>
-                  <input
-                    className="predict-score"
-                    type="number"
-                    min="0"
-                    value={homePick}
-                    onChange={e => setHomePick(clampScore(e.target.value).toString())}
-                  />
-                  <span className="predict-input__dash">-</span>
-                  <input
-                    className="predict-score"
-                    type="number"
-                    min="0"
-                    value={awayPick}
-                    onChange={e => setAwayPick(clampScore(e.target.value).toString())}
-                  />
-                  <div className="predict-team">{displayMatch.team_b}</div>
+              {!hasPredicted && (
+                <div className="predict-input" style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="predict-input__row">
+                    <div className="predict-team">{displayMatch.team_a}</div>
+                    <input
+                      className="predict-score"
+                      type="number"
+                      min="0"
+                      value={homePick}
+                      onChange={e => setHomePick(clampScore(e.target.value).toString())}
+                    />
+                    <span className="predict-input__dash">-</span>
+                    <input
+                      className="predict-score"
+                      type="number"
+                      min="0"
+                      value={awayPick}
+                      onChange={e => setAwayPick(clampScore(e.target.value).toString())}
+                    />
+                    <div className="predict-team">{displayMatch.team_b}</div>
+                  </div>
+                  <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+                    <button
+                      className="primary-btn predict-btn"
+                      onClick={() => {
+                        if (!user) {
+                          onClose?.(); // Đóng modal hiện tại
+                          onRequestLogin?.();
+                        } else {
+                          handlePredict();
+                        }
+                      }}
+                      disabled={(!user ? false : !canPredict || hasPredicted)} // Chưa đăng nhập thì luôn active để click
+                    >
+                      {!user ? "Đăng nhập / Đăng ký" : !hasTeams ? "Chưa xác định đội" : (canPredict ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa")}
+                    </button>
+                    {!user && <div className="muted" style={{ fontSize: 12 }}>Vui lòng đăng nhập để tham gia dự đoán</div>}
+                    {user && !hasTeams && <div className="muted" style={{ fontSize: 12 }}>Dự đoán sẽ mở khi đã xác định 2 đội đấu</div>}
+                    {user && hasTeams && !isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
+                  </div>
                 </div>
-                <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
-                  <button
-                    className="primary-btn predict-btn"
-                    onClick={() => {
-                      if (!user) {
-                        onClose?.(); // Đóng modal hiện tại
-                        onRequestLogin?.();
-                      } else {
-                        handlePredict();
-                      }
-                    }}
-                    disabled={(!user ? false : !canPredict || hasPredicted)} // Chưa đăng nhập thì luôn active để click
-                  >
-                    {!user ? "Đăng nhập / Đăng ký" : !hasTeams ? "Chưa xác định đội" : (canPredict ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa")}
-                  </button>
-                  {!user && <div className="muted" style={{ fontSize: 12 }}>Vui lòng đăng nhập để tham gia dự đoán</div>}
-                  {user && !hasTeams && <div className="muted" style={{ fontSize: 12 }}>Dự đoán sẽ mở khi đã xác định 2 đội đấu</div>}
-                  {user && hasTeams && !isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
-                </div>
-              </div>
+              )}
               <div className="predict-summary">
                 <p className="eyebrow">Tổng lượt: {stats.total || 0}</p>
                 {stats.total > 0 ? (
