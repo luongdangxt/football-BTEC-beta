@@ -581,7 +581,7 @@ function AppContent() {
             </div>
             <div className="hero-text">
               <h1 className="hero-title">FOOTBALL CHAMPIONSHIP 2025</h1>
-              <p className="hero-subtitle">Giải bóng đá sinh viên BTEC FPT</p>
+              <p className="hero-subtitle">Giải bóng đá sinh viên FPT Polytechnic International</p>
             </div>
             <div className="sponsor-strip">
               <span className="sponsor-label">Tài trợ bởi:</span>
