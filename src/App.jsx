@@ -736,7 +736,7 @@ function AppContent() {
           <MatchDetailModal
             match={selectedMatch}
             user={user}
-            initialTab={selectedMatchTab}
+            initialTab={matchModalTab}
             onClose={() => setSelectedMatch(null)}
             showToast={showToast}
             onRequestLogin={() => setView("login")}
