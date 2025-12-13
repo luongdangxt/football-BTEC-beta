@@ -251,6 +251,7 @@ const transformMatchesToDays = (matches) => {
       status: match.status || (match.is_locked ? "ft" : "upcoming"),
       events: match.events || [],
       kickoff: kickoffDisplay,
+      rawKickoff: match.kickoff,
       minute: match.minute,
       date: dateKey,
       start_time: match.start_time,
@@ -1275,6 +1276,11 @@ function AdminPanel({ matchDays = [], users = [], teams = [], onRefreshUsers, on
   const [section, setSection] = React.useState("matches");
   const isNarrow = useIsNarrow(768);
 
+  // Auto refresh teams when opening admin panel
+  React.useEffect(() => {
+    onRefreshTeams?.();
+  }, []);
+
   // Team form state
   const [newTeamName, setNewTeamName] = React.useState("");
   const [newTeamLogo, setNewTeamLogo] = React.useState("");
@@ -1738,9 +1744,10 @@ function AdminMatchForm({ initialMatch, submitLabel = "Luu", teams = [], onSubmi
     competition: match?.competition || "",
     status: match?.status || "upcoming",
 
-    // Lấy thẳng chuỗi từ match, không cần convert Date nữa
+    // Lấy thẳng chuỗi từ match, ưu tiên rawKickoff (dạng HH:mm)
     date: match?.date || "",
-    kickoff: match?.kickoff || "",
+    kickoff: match?.rawKickoff || match?.kickoff || "",
+
 
     homeName: match?.home?.name || "", homeLogo: match?.home?.logo || "", homeScore: match?.home?.score ?? "",
     awayName: match?.away?.name || "", awayLogo: match?.away?.logo || "", awayScore: match?.away?.score ?? "",
