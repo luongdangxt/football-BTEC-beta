@@ -575,9 +575,9 @@ function AppContent() {
         <header className="hero">
           <div className="hero-main">
             <div className="hero-logos">
-              <img src={logoLeft} alt="BTEC FPT Logo" className="hero-logo" />
-              <img src={logoCenter} alt="BTEC Football Championship 2025" className="hero-logo hero-logo--main" />
-              <img src={logoRight} alt="BTEC IT Club Logo" className="hero-logo" />
+              <img src={logoLeft} alt="FPT Polytechnic International Logo" className="hero-logo" />
+              <img src={logoCenter} alt="Football Championship 2025" className="hero-logo hero-logo--main" />
+              <img src={logoRight} alt="Melbourne Polytechnic Logo" className="hero-logo" />
             </div>
             <div className="hero-text">
               <h1 className="hero-title">FOOTBALL CHAMPIONSHIP 2025</h1>
