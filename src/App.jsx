@@ -736,12 +736,10 @@ function AppContent() {
           <MatchDetailModal
             match={selectedMatch}
             user={user}
-            initialTab={matchModalTab}
-            onClose={() => {
-              setSelectedMatch(null);
-              setMatchModalTab("info");
-            }}
+            initialTab={selectedMatchTab}
+            onClose={() => setSelectedMatch(null)}
             showToast={showToast}
+            onRequestLogin={() => setView("login")}
           />
         )}
         <LoginPromptModal
@@ -2020,7 +2018,7 @@ function StatusPill({ status, label }) {
   return <span className={`status-pill status-pill--${status}`}>{label}</span>;
 }
 
-function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast }) {
+function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast, onRequestLogin }) {
   const [detail, setDetail] = React.useState(null);
   const [homePick, setHomePick] = React.useState("");
   const [awayPick, setAwayPick] = React.useState("");
@@ -2070,7 +2068,7 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
   const displayMatch = detail || match;
   const stats = detail?.stats || { home_percent: 0, draw_percent: 0, away_percent: 0, total: 0 };
   const predictors = detail?.predictors || [];
-  const maskName = (name) => name ? name.substring(0, 2) + "***" + name.slice(-2) : "An danh";
+  const maskName = (name) => name || "An danh";
   const currentUserId = (user?.studentId || "").toString().trim().toLowerCase();
   const currentUserName = (user?.fullName || user?.full_name || "").toString().trim().toLowerCase();
 
@@ -2264,13 +2262,21 @@ function MatchDetailModal({ match, user, initialTab = "info", onClose, showToast
                 <div className="predict-action" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
                   <button
                     className="primary-btn predict-btn"
-                    onClick={handlePredict}
-                    disabled={!canPredict || hasPredicted}
+                    onClick={() => {
+                      if (!user) {
+                        onClose?.(); // Đóng modal hiện tại
+                        onRequestLogin?.();
+                      } else {
+                        handlePredict();
+                      }
+                    }}
+                    disabled={(!user ? false : !canPredict || hasPredicted)} // Chưa đăng nhập thì luôn active để click
                   >
-                    {!hasTeams ? "Chưa xác định đội" : (canPredict ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa")}
+                    {!user ? "Đăng nhập / Đăng ký" : !hasTeams ? "Chưa xác định đội" : (canPredict ? (hasPredicted ? "Bạn đã dự đoán" : "Gửi dự đoán") : "Đã khóa")}
                   </button>
-                  {!hasTeams && <div className="muted" style={{ fontSize: 12 }}>Dự đoán sẽ mở khi đã xác định 2 đội đấu</div>}
-                  {hasTeams && !isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
+                  {!user && <div className="muted" style={{ fontSize: 12 }}>Vui lòng đăng nhập để tham gia dự đoán</div>}
+                  {user && !hasTeams && <div className="muted" style={{ fontSize: 12 }}>Dự đoán sẽ mở khi đã xác định 2 đội đấu</div>}
+                  {user && hasTeams && !isUpcoming && <div className="muted" style={{ fontSize: 12 }}>Dự đoán chỉ mở khi trận chưa bắt đầu</div>}
                 </div>
               </div>
               <div className="predict-summary">
