@@ -155,10 +155,10 @@ const quarterGames = [
 ];
 
 const knockoutQuarterGames = [
-  { id: "qf1", label: "Tứ kết 1", slots: ["Nhất A", "Nhì B"] },
-  { id: "qf2", label: "Tứ kết 2", slots: ["Nhất B", "Nhì A"] },
-  { id: "qf3", label: "Tứ kết 3", slots: ["Nhất C", "Nhì D"] },
-  { id: "qf4", label: "Tứ kết 4", slots: ["Nhất D", "Nhì C"] },
+  { id: "qf1", label: "Tứ kết 1", slots: ["The Fix FC", "FC Thanh Triều"] },
+  { id: "qf2", label: "Tứ kết 2", slots: ["Galacticos", "TD & AE"] },
+  { id: "qf3", label: "Tứ kết 3", slots: ["Max FC", "All Star BTEC"] },
+  { id: "qf4", label: "Tứ kết 4", slots: ["Melbourne FPI", "Trẻ Mel"] },
 ];
 
 const semiGames = [
