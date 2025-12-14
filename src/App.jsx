@@ -167,8 +167,8 @@ const semiGames = [
 ];
 
 const finalGames = [
-  { id: "g8", label: "Tranh hạng Ba", slots: ["Thua BK1", "Thua BK2"], connectorHeight: 94 },
-  { id: "g7", label: "Chung kết", slots: ["Thắng BK1", "Thắng BK2"], connectorHeight: 188 },
+  { id: "g8", label: "Tranh hạng Ba", slots: ["FC Thanh Triều", "Melbourne FPI"], connectorHeight: 94 },
+  { id: "g7", label: "Chung kết", slots: ["Max FC", "Galacticos"], connectorHeight: 188 },
 ];
 
 const sectionMatches = {
