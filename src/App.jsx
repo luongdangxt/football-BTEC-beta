@@ -162,8 +162,8 @@ const knockoutQuarterGames = [
 ];
 
 const semiGames = [
-  { id: "g5", label: "Bán kết 1", slots: ["Max FC", "Melbourne FPI"], connectorHeight: 94 },
-  { id: "g6", label: "Bán kết 2", slots: ["FC Thanh Triều", "Galacticos"], connectorHeight: 94 },
+  { id: "g5", label: "Bán kết 1", slots: ["FC Thanh Triều", "Galacticos"], connectorHeight: 94 },
+  { id: "g6", label: "Bán kết 2", slots: ["Max FC", "Melbourne FPI"], connectorHeight: 94 },
 ];
 
 const finalGames = [
