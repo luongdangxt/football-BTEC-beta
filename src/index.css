@@ -1714,6 +1714,7 @@ body {
   grid-column: 7;
   grid-row: 3 / span 2;
   align-self: center;
+  margin-top: -380px;
 }
 
 .pos-f {
