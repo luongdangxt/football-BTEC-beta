@@ -10,7 +10,7 @@
   --accent-2: #d7f55a;
   --col-game: 220px;
   --col-gap: 60px;
-  --col-gap-sm: 32px;
+  --col-gap-sm: 16px;
   --line: rgba(91, 237, 159, 0.8);
   --stroke: rgba(255, 255, 255, 0.08);
   --shadow: 0 18px 90px rgba(0, 0, 0, 0.35);
@@ -27,7 +27,7 @@
   :root {
     --col-game: 240px;
     --col-gap: 90px;
-    --col-gap-sm: 60px;
+    --col-gap-sm: 20px;
   }
 }
 
@@ -1637,6 +1637,27 @@ body {
   font-size: 18px;
 }
 
+.prize-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(215, 245, 90, 0.14), rgba(91, 237, 159, 0.14));
+  border: 1px solid rgba(215, 245, 90, 0.6);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.prize-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prize-text strong {
+  font-size: 18px;
+}
+
 .pos-q1 {
   grid-column: 1;
   grid-row: 1;
@@ -1705,6 +1726,20 @@ body {
   grid-column: 9;
   grid-row: 1 / span 2;
   align-self: center;
+}
+
+.pos-second {
+  grid-column: 9;
+  grid-row: 3;
+  align-self: center;
+  margin-top: -310px;
+}
+
+.pos-third-prize {
+  grid-column: 9;
+  grid-row: 4;
+  align-self: center;
+  margin-top: -430px;
 }
 
 .connector {

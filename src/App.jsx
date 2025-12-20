@@ -936,6 +936,8 @@ function BracketBoard({ onSectionSelect }) {
           <GameCard game={finalGames[0]} variant="third" extraClass="pos-third" onClick={() => onSectionSelect("g8")} />
           <GameCard game={finalGames[1]} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
           <ChampionCard extraClass="pos-champion" />
+          <PrizeCard label="Giải nhì" extraClass="pos-second" />
+          <PrizeCard label="Giải ba" extraClass="pos-third-prize" />
           <Connector className="connector connector-gq-top" mode="cross" />
           <Connector className="connector connector-gq-bottom" mode="cross" />
           <Connector className="connector connector-q12" mode="q" />
@@ -1877,6 +1879,14 @@ function ChampionCard({ extraClass }) {
     <div className={`champion-card ${extraClass || ""}`}>
       <div className="cup-icon"><div className="cup-bowl" /><div className="cup-base" /></div>
       <div className="champion-text"><span className="eyebrow">Vô địch</span><strong>Đang chờ...</strong></div>
+    </div>
+  );
+}
+
+function PrizeCard({ label, extraClass }) {
+  return (
+    <div className={`prize-card ${extraClass || ""}`}>
+      <div className="prize-text"><span className="eyebrow">{label}</span><strong>Đang chờ...</strong></div>
     </div>
   );
 }
