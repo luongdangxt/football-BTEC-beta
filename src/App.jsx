@@ -936,6 +936,8 @@ function BracketBoard({ onSectionSelect }) {
           <GameCard game={finalGames[0]} variant="third" extraClass="pos-third" onClick={() => onSectionSelect("g8")} />
           <GameCard game={finalGames[1]} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
           <ChampionCard extraClass="pos-champion" />
+          <PrizeCard label="Giải nhì" extraClass="pos-second" />
+          <PrizeCard label="Giải ba" extraClass="pos-third-prize" />
           <Connector className="connector connector-gq-top" mode="cross" />
           <Connector className="connector connector-gq-bottom" mode="cross" />
           <Connector className="connector connector-q12" mode="q" />
@@ -1881,6 +1883,14 @@ function ChampionCard({ extraClass }) {
   );
 }
 
+function PrizeCard({ label, extraClass }) {
+  return (
+    <div className={`prize-card ${extraClass || ""}`}>
+      <div className="prize-text"><span className="eyebrow">{label}</span><strong>Đang chờ...</strong></div>
+    </div>
+  );
+}
+
 function Connector({ className, mode }) {
   const isSemi = mode === "semi";
   const isFinal = mode === "final";
@@ -1896,7 +1906,7 @@ function Connector({ className, mode }) {
           ? "0 0 140 120"
           : "0 0 140 200";
   let path = isSemi
-    ? "M0 100 C 40 100 40 150 80 200 C 40 250 40 300 0 300 M80 200 C 110 200 125 200 140 200"
+    ? "M0 100 C 35 100 70 100 100 110 C 110 120 120 135 140 200 M0 300 C 32 300 52 270 70 200 C 88 130 108 100 140 100"
     : isFinal
       ? "M0 110 C 30 110 60 110 120 110"
       : isCross
