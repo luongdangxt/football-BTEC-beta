@@ -936,8 +936,8 @@ function BracketBoard({ onSectionSelect }) {
           <GameCard game={finalGames[0]} variant="third" extraClass="pos-third" onClick={() => onSectionSelect("g8")} />
           <GameCard game={finalGames[1]} variant="final" extraClass="pos-f" onClick={() => onSectionSelect("g7")} />
           <ChampionCard extraClass="pos-champion" />
-          <PrizeCard label="Giải nhì" extraClass="pos-second" />
-          <PrizeCard label="Giải ba" extraClass="pos-third-prize" />
+          <SecondPlaceCard extraClass="pos-second" />
+          <ThirdPlaceCard extraClass="pos-third-prize" />
           <Connector className="connector connector-gq-top" mode="cross" />
           <Connector className="connector connector-gq-bottom" mode="cross" />
           <Connector className="connector connector-q12" mode="q" />
@@ -1883,10 +1883,18 @@ function ChampionCard({ extraClass }) {
   );
 }
 
-function PrizeCard({ label, extraClass }) {
+function SecondPlaceCard({ extraClass }) {
   return (
     <div className={`prize-card ${extraClass || ""}`}>
-      <div className="prize-text"><span className="eyebrow">{label}</span><strong>Đang chờ...</strong></div>
+      <div className="prize-text"><span className="eyebrow">Giải nhì</span><strong>Đang chờ...</strong></div>
+    </div>
+  );
+}
+
+function ThirdPlaceCard({ extraClass }) {
+  return (
+    <div className={`prize-card ${extraClass || ""}`}>
+      <div className="prize-text"><span className="eyebrow">Giải ba</span><strong>Melbourne FPI</strong></div>
     </div>
   );
 }
