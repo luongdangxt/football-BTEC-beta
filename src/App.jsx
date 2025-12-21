@@ -1878,7 +1878,7 @@ function ChampionCard({ extraClass }) {
   return (
     <div className={`champion-card ${extraClass || ""}`}>
       <div className="cup-icon"><div className="cup-bowl" /><div className="cup-base" /></div>
-      <div className="champion-text"><span className="eyebrow">Vô địch</span><strong>Đang chờ...</strong></div>
+      <div className="champion-text"><span className="eyebrow">Vô địch</span><strong>Max FC</strong></div>
     </div>
   );
 }
@@ -1886,7 +1886,7 @@ function ChampionCard({ extraClass }) {
 function SecondPlaceCard({ extraClass }) {
   return (
     <div className={`prize-card ${extraClass || ""}`}>
-      <div className="prize-text"><span className="eyebrow">Giải nhì</span><strong>Đang chờ...</strong></div>
+      <div className="prize-text"><span className="eyebrow">Giải nhì</span><strong>Galocticos</strong></div>
     </div>
   );
 }
